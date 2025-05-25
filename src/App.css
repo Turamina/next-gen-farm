@@ -1,0 +1,88 @@
+.App {
+  text-align: center;
+  background: #fff;
+  min-height: 100vh;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background: #e8f5e9;
+  min-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: #222;
+  border-radius: 18px;
+  margin: 2rem auto;
+  max-width: 900px;
+  box-shadow: 0 4px 24px rgba(56, 142, 60, 0.08);
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.farm-sections {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.farm-card {
+  background: #fff;
+  color: #388e3c;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(56, 142, 60, 0.08);
+  padding: 2rem;
+  min-width: 220px;
+  max-width: 300px;
+  flex: 1 1 220px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid #c8e6c9;
+  text-align: center;
+}
+
+.farm-card:hover {
+  transform: translateY(-8px) scale(1.03);
+  box-shadow: 0 4px 16px rgba(56, 142, 60, 0.15);
+}
+
+h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  color: #256029;
+}
+
+h2 {
+  font-size: 1.3rem;
+  margin-bottom: 0.5rem;
+  color: #388e3c;
+}
+
+p {
+  font-size: 1rem;
+  color: #333;
+}
