@@ -1,0 +1,256 @@
+.cattle-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.cattle-page h1 {
+  text-align: center;
+  color: #2c3e50;
+  margin-bottom: 2rem;
+}
+
+/* Stats section */
+.cattle-stats {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.stat-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f5f7fa 100%);
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  min-width: 250px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.stat-icon {
+  font-size: 2.5rem;
+  margin-right: 1rem;
+}
+
+.stat-info h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #666;
+}
+
+.stat-info p {
+  margin: 0.5rem 0 0;
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+/* Content layout */
+.cattle-content {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 2rem;
+}
+
+@media (max-width: 960px) {
+  .cattle-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Form section */
+.cattle-form-section {
+  background-color: #ffffff;
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.cattle-form-section h2 {
+  margin-top: 0;
+  color: #2c3e50;
+  font-size: 1.4rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid #eee;
+}
+
+.cattle-form .form-group {
+  margin-bottom: 1.2rem;
+}
+
+.cattle-form label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #555;
+}
+
+.cattle-form input,
+.cattle-form textarea {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  transition: border-color 0.3s;
+}
+
+.cattle-form input:focus,
+.cattle-form textarea:focus {
+  border-color: #4CAF50;
+  outline: none;
+}
+
+.cattle-form .form-error {
+  color: #d9534f;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background-color: rgba(217, 83, 79, 0.1);
+  border-radius: 5px;
+}
+
+.cattle-form .submit-btn {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 0.8rem 1.2rem;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.3s;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.cattle-form .submit-btn:hover {
+  background-color: #388e3c;
+}
+
+.cattle-form .submit-btn:disabled {
+  background-color: #a5d6a7;
+  cursor: not-allowed;
+}
+
+/* Cattle list section */
+.cattle-list-section {
+  background-color: #ffffff;
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.cattle-list-section h2 {
+  margin-top: 0;
+  color: #2c3e50;
+  font-size: 1.4rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid #eee;
+}
+
+.loading, .no-cattle {
+  text-align: center;
+  padding: 2rem;
+  color: #777;
+}
+
+/* Cattle grid */
+.cattle-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.cattle-card {
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 1.2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+}
+
+.cattle-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+}
+
+.cattle-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.8rem;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.8rem;
+}
+
+.cattle-header h3 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.2rem;
+}
+
+.cattle-daily-food {
+  display: inline-block;
+  background-color: #4CAF50;
+  color: white;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  font-weight: 500;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.cattle-details {
+  margin-bottom: 1rem;
+}
+
+.cattle-detail {
+  display: flex;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.detail-label {
+  font-weight: 500;
+  color: #555;
+  width: 70px;
+}
+
+.detail-value {
+  color: #2c3e50;
+}
+
+.cattle-notes {
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  padding: 0.8rem;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.cattle-notes p {
+  margin: 0;
+  color: #555;
+}
+
+.delete-btn {
+  background-color: transparent;
+  color: #d9534f;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.3s;
+}
+
+.delete-btn:hover {
+  color: #c9302c;
+}

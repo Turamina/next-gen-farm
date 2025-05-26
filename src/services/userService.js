@@ -39,6 +39,18 @@ export const userService = {
         farmType: userData.farmType || '',
         farmSize: userData.farmSize || '',
         
+        // Cattle Information
+        cattle: {
+          totalCount: 0,
+          types: {
+            dairy: 0,
+            beef: 0,
+            other: 0
+          },
+          totalDailyFoodRequirement: 0,
+          lastUpdated: null
+        },
+        
         // Profile Details
         bio: userData.bio || '',
         profilePicture: userData.profilePicture || '',
@@ -174,6 +186,43 @@ export const userService = {
     } catch (error) {
       console.error('Error deleting user account:', error);
       throw error;
+    }
+  },
+
+  // Export cattle management service
+  cattleService: {
+    // Update cattle statistics in user profile
+    updateCattleStats: async (uid) => {
+      try {
+        const { adminService } = await import('./adminService');
+        
+        // Get all cattle for the user
+        const cattle = await adminService.getUserCattle(uid);
+        
+        // Calculate totals
+        const stats = {
+          totalCount: cattle.length,
+          types: {
+            dairy: cattle.filter(c => c.type?.toLowerCase() === 'dairy').length,
+            beef: cattle.filter(c => c.type?.toLowerCase() === 'beef').length,
+            other: cattle.filter(c => !['dairy', 'beef'].includes(c.type?.toLowerCase())).length
+          },
+          totalDailyFoodRequirement: await adminService.getTotalFoodRequirement(uid),
+          lastUpdated: serverTimestamp()
+        };
+
+        // Update user profile
+        const userRef = doc(db, 'users', uid);
+        await updateDoc(userRef, {
+          'cattle': stats,
+          updatedAt: serverTimestamp()
+        });
+
+        return stats;
+      } catch (error) {
+        console.error('Error updating cattle statistics:', error);
+        throw error;
+      }
     }
   }
 };

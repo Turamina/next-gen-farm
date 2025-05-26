@@ -50,35 +50,31 @@ function BuyNowPopup({ product, onClose }) {
     e.stopPropagation();
   };
 
-  // Combine the current product with cart products, avoiding duplicates
+  // Initialize products, including both the current product and cart items
   useEffect(() => {
     const productList = [];
     const quantityMap = {};
     const selectedMap = {};
 
-    // Add the current product first (the one user clicked 'Buy Now' on)
-    if (product) {
-      const productId = product.id;
-      productList.push(product);
-      quantityMap[productId] = 1;
-      selectedMap[productId] = true;
-    }
-
-    // Add cart items, avoiding duplicates
+    // First add cart items
     cartItems.forEach((cartItem) => {
-      if (!productList.some((p) => p.id === cartItem.productId)) {
-        // Create a product object from cart item
-        productList.push({
-          id: cartItem.productId,
-          name: cartItem.productName,
-          price: cartItem.price,
-          image: cartItem.productImage,
-          quantity: cartItem.quantity,
-        });
-        quantityMap[cartItem.productId] = cartItem.quantity;
-        selectedMap[cartItem.productId] = false; // Default unselected for cart items
-      }
+      productList.push({
+        id: cartItem.productId,
+        name: cartItem.productName,
+        price: cartItem.price,
+        image: cartItem.productImage,
+        quantity: cartItem.quantity,
+      });
+      quantityMap[cartItem.productId] = cartItem.quantity;
+      selectedMap[cartItem.productId] = true; // Cart items selected by default
     });
+
+    // Then add the current product if it's not already in cart
+    if (product && !cartItems.some(item => item.productId === product.id)) {
+      productList.push(product);
+      quantityMap[product.id] = 1;
+      selectedMap[product.id] = true; // Current product selected by default
+    }
 
     setAllProducts(productList);
     setQuantities(quantityMap);
@@ -148,15 +144,21 @@ function BuyNowPopup({ product, onClose }) {
         productName: product.name,
         productImage: product.image,
         price: product.price,
-        quantity: quantities[product.id],
+        quantity: quantities[product.id] || 1,
       }));
 
     if (selectedItems.length === 0) {
       setErrorMessage('Please select at least one product.');
       return;
     }
+
+    // Calculate order totals
+    const subtotal = selectedItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+    const tax = subtotal * 0.05; // 5% tax
+    const shipping = subtotal > 500 ? 0 : 60; // Free shipping over ৳500
+    const totalAmount = subtotal + tax + shipping;
     
-    // Check stock availability for the selected items
+    // Check stock availability
     const stockErrors = await checkProductsStock(selectedItems);
     if (stockErrors.length > 0) {
       setErrorMessage(stockErrors.join('\n'));
@@ -167,54 +169,41 @@ function BuyNowPopup({ product, onClose }) {
     setErrorMessage('');
     
     try {
-      // Create order data
       const orderData = {
         items: selectedItems,
-        totalAmount: calculateTotal(),
-        subtotal: calculateTotal(),
-        tax: 0,
-        shipping: 0,
+        totalAmount: totalAmount,
+        subtotal: subtotal,
+        tax: tax,
+        shipping: shipping,
         discount: 0,
         deliveryAddress: {
-          street: 'Default Address',
-          city: 'Default City',
-          state: 'Default State',
-          zipCode: '000000',
+          street: '',
+          city: '',
+          state: '',
+          zipCode: '',
           country: 'India',
-          phone: '0000000000'
+          phone: ''
         },
-        deliveryDate: null,
-        deliveryTimeSlot: null,
-        deliveryInstructions: '',
         paymentMethod: 'cash_on_delivery',
-        paymentId: null,
         estimatedDelivery: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) // 3 days from now
       };
 
       // Place the order
       const result = await orderService.createOrder(currentUser.uid, orderData);
       
-      // Remove purchased items from cart
-      const cartProductIds = cartItems.map(item => item.productId);
+      // Remove all selected items that were in cart
       for (const item of selectedItems) {
-        if (cartProductIds.includes(item.productId)) {
-          // Find the cart item with this productId
-          const cartItem = cartItems.find(ci => ci.productId === item.productId);
-          if (cartItem && cartItem.id) {
-            removeFromCart(cartItem.id);
-          }
+        const cartItem = cartItems.find(ci => ci.productId === item.productId);
+        if (cartItem) {
+          await removeFromCart(cartItem.id);
         }
       }
       
-      // Show success message
       setSuccessMessage(`Order placed successfully! Your order ID is ${result.orderId}`);
-      
-      // Hide processing UI
       setIsProcessing(false);
       
-      // Close popup after a short delay and redirect to profile page
+      // Close popup after a delay and redirect to profile page
       setTimeout(() => {
-        // The onClose function should handle navigation to the profile page with orders tab active
         onClose(`Order #${result.orderId} placed successfully!`, '/profile?tab=orders');
       }, 2000);
     } catch (error) {

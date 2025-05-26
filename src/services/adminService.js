@@ -27,6 +27,7 @@ class AdminService {
     this.ordersCollection = 'orders';
     this.usersCollection = 'users';
     this.adminLogsCollection = 'adminLogs';
+    this.cattleCollection = 'cattle';
   }
 
   // ==================== PRODUCT MANAGEMENT ====================
@@ -172,24 +173,40 @@ class AdminService {
    */
   async getAllOrders() {
     try {
-      const q = query(
-        collection(db, this.ordersCollection),
-        orderBy('createdAt', 'desc')
-      );
+      const ordersRef = collection(db, this.ordersCollection);
+      const ordersSnapshot = await getDocs(ordersRef);
       
-      const querySnapshot = await getDocs(q);
       const orders = [];
-      
-      querySnapshot.forEach((doc) => {
+      for (const doc of ordersSnapshot.docs) {
+        const orderData = doc.data();
+        
+        // Calculate totals if not present
+        if (!orderData.subtotal || !orderData.totalAmount) {
+          let subtotal = 0;
+          orderData.items?.forEach(item => {
+            subtotal += (item.price * item.quantity);
+          });
+          
+          orderData.subtotal = subtotal;
+          orderData.tax = subtotal * 0.05; // 5% tax
+          orderData.shipping = subtotal > 500 ? 0 : 60; // Free shipping over ৳500
+          orderData.totalAmount = subtotal + orderData.tax + orderData.shipping;
+        }
+
         orders.push({
           id: doc.id,
-          ...doc.data()
+          ...orderData,
+          createdAt: orderData.createdAt?.toDate() || new Date(),
+          updatedAt: orderData.updatedAt?.toDate() || new Date()
         });
-      });
+      }
 
+      // Sort orders by creation date, newest first
+      orders.sort((a, b) => b.createdAt - a.createdAt);
+      
       return orders;
     } catch (error) {
-      console.error('Error getting orders:', error);
+      console.error('Error getting all orders:', error);
       throw new Error('Failed to fetch orders');
     }
   }
@@ -197,7 +214,7 @@ class AdminService {
   /**
    * Get orders by status
    * @param {string} status - Order status (pending, confirmed, shipped, delivered, cancelled)
-   * @returns {Promise<Array>} Array of orders
+   * @returns {Promise<Array} Array of orders
    */
   async getOrdersByStatus(status) {
     try {
@@ -504,6 +521,194 @@ class AdminService {
     } catch (error) {
       console.error('Error getting low stock products:', error);
       return [];
+    }
+  }
+
+  // ==================== CATTLE MANAGEMENT ====================
+
+  /**
+   * Add cattle to user's farm
+   * @param {string} userId - User ID
+   * @param {Object} cattleData - Cattle information
+   * @returns {Promise<string>} Cattle ID
+   */
+  async addCattle(userId, cattleData) {
+    try {
+      const cattle = {
+        userId,
+        ...cattleData,
+        dailyFoodRequirement: cattleData.dailyFoodRequirement || this.calculateFoodRequirement(cattleData),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+
+      const docRef = await addDoc(collection(db, this.cattleCollection), cattle);
+      
+      // Update user's cattle statistics
+      const { cattleService } = await import('./userService');
+      await cattleService.updateCattleStats(userId);
+      
+      await this.logAdminAction('add_cattle', {
+        userId,
+        cattleId: docRef.id,
+        cattleData: cattle
+      });
+
+      return docRef.id;
+    } catch (error) {
+      console.error('Error adding cattle:', error);
+      throw new Error('Failed to add cattle');
+    }
+  }
+
+  /**
+   * Get all cattle for a user
+   * @param {string} userId - User ID
+   * @returns {Promise<Array>} Array of cattle
+   */
+  async getUserCattle(userId) {
+    try {
+      const q = query(
+        collection(db, this.cattleCollection),
+        where('userId', '==', userId),
+        orderBy('createdAt', 'desc')
+      );
+      
+      const querySnapshot = await getDocs(q);
+      const cattle = [];
+      
+      querySnapshot.forEach((doc) => {
+        cattle.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+
+      return cattle;
+    } catch (error) {
+      console.error('Error getting user cattle:', error);
+      throw new Error('Failed to fetch cattle');
+    }
+  }
+
+  /**
+   * Update cattle information
+   * @param {string} cattleId - Cattle ID
+   * @param {Object} updateData - Data to update
+   */
+  async updateCattle(cattleId, updateData) {
+    try {
+      const cattleRef = doc(db, this.cattleCollection, cattleId);
+      const cattleDoc = await getDoc(cattleRef);
+      
+      if (!cattleDoc.exists()) {
+        throw new Error('Cattle not found');
+      }
+
+      const cattleData = cattleDoc.data();
+      const userId = cattleData.userId;
+
+      await updateDoc(cattleRef, {
+        ...updateData,
+        dailyFoodRequirement: updateData.weight ? this.calculateFoodRequirement({...cattleData, ...updateData}) : cattleData.dailyFoodRequirement,
+        updatedAt: serverTimestamp()
+      });
+
+      // Update user's cattle statistics
+      const { cattleService } = await import('./userService');
+      await cattleService.updateCattleStats(userId);
+
+      await this.logAdminAction('update_cattle', {
+        cattleId,
+        userId,
+        updateData
+      });
+    } catch (error) {
+      console.error('Error updating cattle:', error);
+      throw new Error('Failed to update cattle');
+    }
+  }
+
+  /**
+   * Delete cattle from database
+   * @param {string} cattleId - Cattle ID to delete
+   */
+  async deleteCattle(cattleId) {
+    try {
+      const cattleRef = doc(db, this.cattleCollection, cattleId);
+      const cattleDoc = await getDoc(cattleRef);
+      
+      if (!cattleDoc.exists()) {
+        throw new Error('Cattle not found');
+      }
+
+      const userId = cattleDoc.data().userId;
+      
+      await deleteDoc(cattleRef);
+
+      // Update user's cattle statistics
+      const { cattleService } = await import('./userService');
+      await cattleService.updateCattleStats(userId);
+
+      await this.logAdminAction('delete_cattle', {
+        cattleId,
+        userId
+      });
+    } catch (error) {
+      console.error('Error deleting cattle:', error);
+      throw new Error('Failed to delete cattle');
+    }
+  }
+
+  /**
+   * Calculate daily food requirement for cattle
+   * @param {Object} cattleData - Cattle information including weight, age, type
+   * @returns {number} Daily food requirement in kg
+   */
+  calculateFoodRequirement(cattleData) {
+    // Base calculation on cattle weight (approximately 2-3% of body weight per day)
+    const baseRequirement = cattleData.weight * 0.025; // 2.5% of body weight
+
+    // Adjust based on age
+    let ageMultiplier = 1;
+    if (cattleData.age < 1) { // Calves need more food per body weight
+      ageMultiplier = 1.2;
+    } else if (cattleData.age > 10) { // Older cattle may need less
+      ageMultiplier = 0.9;
+    }
+
+    // Adjust based on type/purpose
+    let typeMultiplier = 1;
+    switch(cattleData.type?.toLowerCase()) {
+      case 'dairy':
+        typeMultiplier = 1.3; // Dairy cows need more food
+        break;
+      case 'beef':
+        typeMultiplier = 1.1;
+        break;
+      default:
+        typeMultiplier = 1;
+    }
+
+    return Math.round(baseRequirement * ageMultiplier * typeMultiplier * 10) / 10; // Round to 1 decimal
+  }
+
+  /**
+   * Get total daily food requirement for all cattle
+   * @param {string} userId - User ID
+   * @returns {Promise<number>} Total daily food requirement in kg
+   */
+  async getTotalFoodRequirement(userId) {
+    try {
+      const cattle = await this.getUserCattle(userId);
+      const totalRequirement = cattle.reduce((total, animal) => {
+        return total + (animal.dailyFoodRequirement || 0);
+      }, 0);
+      
+      return Math.round(totalRequirement * 10) / 10; // Round to 1 decimal
+    } catch (error) {
+      console.error('Error calculating total food requirement:', error);
+      throw new Error('Failed to calculate total food requirement');
     }
   }
 }
