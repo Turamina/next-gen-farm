@@ -353,6 +353,26 @@
   text-decoration: underline;
 }
 
+.submit-error {
+  background-color: #fee;
+  border: 1px solid #fcc;
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+
+.signup-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: linear-gradient(135deg, #81c784, #66bb6a);
+}
+
+.signup-btn:disabled:hover {
+  transform: none;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .signup-container {

@@ -1,0 +1,93 @@
+/* Loading Spinner Styles */
+.loading-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.loading-spinner {
+  text-align: center;
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e8f5e8;
+  /* Ensure no animation affects the container */
+  animation: none !important;
+  transform: none !important;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 1rem;
+  border: 4px solid #e8f5e8;
+  border-top: 4px solid #4caf50;
+  border-radius: 50%;
+  /* Only the spinner element rotates */
+  animation: spin 1s linear infinite;
+}
+
+.loading-message {
+  /* Stronger selector to prevent inheriting animations */
+  color: #2d5016 !important;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+  /* Force no animation with !important to override any inheritance */
+  animation: none !important;
+  transform: none !important;
+  /* Additional properties to ensure text doesn't rotate */
+  transition: none !important;
+  rotate: none !important;
+  /* Isolate from parent transformations */
+  transform-style: flat !important;
+}
+
+/* New wrapper specifically for text to ensure it doesn't rotate */
+.static-text-wrapper {
+  /* Cancel out any rotations that might be inherited */
+  animation: none !important;
+  transform: none !important;
+  /* Create a new stacking context */
+  position: relative;
+  z-index: 1;
+  /* Ensure it doesn't inherit other properties */
+  rotate: none !important;
+  transition: none !important;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .loading-spinner {
+    padding: 1.5rem;
+    margin: 1rem;
+  }
+  
+  .spinner {
+    width: 35px;
+    height: 35px;
+  }
+  
+  .loading-message {
+    font-size: 0.9rem;
+  }
+  
+  /* Ensure even on mobile the static wrapper doesn't rotate */
+  .static-text-wrapper {
+    animation: none !important;
+    transform: none !important;
+  }
+}

@@ -1,15 +1,37 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import './Home.css';
 import ProductCard from '../components/ProductCard';
-import dummyProducts from '../data/products';
+import { productService } from '../services/productService';
 
 function Home() {
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const fetchFeaturedProducts = async () => {
+      try {
+        setLoading(true);
+        console.log('Home: Fetching featured products...');
+        const products = await productService.getFeaturedProducts(3);
+        console.log('Home: Featured products received:', products);
+        setFeaturedProducts(products);
+      } catch (error) {
+        console.error('Error fetching featured products:', error);
+        setFeaturedProducts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFeaturedProducts();
+  }, []);
+
   return (
     <div className="home-container">
       <section className="hero-section">
         <div className="hero-content">
-          
+          <h1>Fresh Farm Products Delivered to Your Door</h1>
+          <p>Experience the taste of nature with our premium farm-fresh dairy products</p>
           <div className="hero-buttons">
             <Link to="/products" className="cta-button primary">View All Products</Link>
             <Link to="/about" className="cta-button secondary">Learn More</Link>
@@ -17,17 +39,28 @@ function Home() {
         </div>
       </section>
 
-      <section className="featured-products">
+      <section className="products-container">
         <div className="section-header">
           <h2>Featured Products</h2>
-          <p>Discover our most popular farm-fresh products</p>
+          <p>Discover our most popular farm-fresh items</p>
         </div>
-        <div className="products-preview">
-          {dummyProducts.slice(0, 3).map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-        <Link to="/products" className="view-all-link">View All Products →</Link>
+        {loading ? (
+          <div className="loading-featured">
+            <div className="loading-spinner"></div>
+            <p>Loading products...</p>
+          </div>
+        ) : featuredProducts.length > 0 ? (
+          <div className="products-grid">
+            {featuredProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        ) : (
+          <div className="no-featured">
+            <p>No products available at the moment.</p>
+            <p>Please check back later!</p>
+          </div>
+        )}
       </section>
 
       <section className="farm-features">

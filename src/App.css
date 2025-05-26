@@ -1,7 +1,23 @@
+html, 
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
 .App {
   text-align: center;
   background: #fff;
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .App-logo {
@@ -85,4 +101,59 @@ h2 {
 p {
   font-size: 1rem;
   color: #333;
+}
+
+.app-main-content {
+  flex: 1 0 auto;
+  padding-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 64px); /* Adjust based on your header height */
+}
+
+/* Base responsive styles */
+:root {
+  --container-padding: 1rem;
+  --container-max-width: 1200px;
+  --header-height: 64px;
+  --footer-padding: 2rem;
+  --grid-gap: 2rem;
+}
+
+@media screen and (min-width: 768px) {
+  :root {
+    --container-padding: 2rem;
+    --grid-gap: 2.5rem;
+  }
+}
+
+@media screen and (min-width: 1024px) {
+  :root {
+    --container-padding: 3rem;
+    --grid-gap: 3rem;
+  }
+}
+
+.container {
+  width: 100%;
+  max-width: var(--container-max-width);
+  margin: 0 auto;
+  padding: 0 var(--container-padding);
+}
+
+/* Responsive text sizes */
+h1 {
+  font-size: clamp(1.75rem, 5vw, 2.5rem);
+}
+
+h2 {
+  font-size: clamp(1.25rem, 4vw, 2rem);
+}
+
+h3 {
+  font-size: clamp(1.1rem, 3vw, 1.5rem);
+}
+
+p {
+  font-size: clamp(0.9rem, 2vw, 1rem);
 }

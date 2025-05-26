@@ -131,193 +131,79 @@
   flex-shrink: 0;
 }
 
-/* User Welcome Styles */
-.user-welcome {
-  color: #2e7d32;
-  font-weight: 600;
-  font-size: 0.9rem;
-  text-decoration: none;
-  transition: all 0.3s ease;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  background: white;
-  border: 2px solid #4caf50;
-  display: inline-block;
-}
-
-.user-welcome:hover {
-  background: #4caf50;
-  color: white;
-  transform: translateY(-1px);
-  box-shadow: 0 3px 10px rgba(76, 175, 80, 0.3);
-}
-
-/* Cart Link Styles */
-.cart-link {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.75rem;
-  border-radius: 50%;
-  background: #f8f9fa;
-  text-decoration: none;
-  transition: all 0.3s ease;
-  border: 2px solid transparent;
-  min-width: 50px;
-  height: 50px;
-}
-
-.cart-link:hover {
-  background: #e8f5e8;
-  border-color: #4caf50;
-  transform: scale(1.1);
-}
-
-.cart-icon {
-  font-size: 1.5rem;
-  color: #388e3c;
-}
-
-.cart-count {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  background: #ff4444;
-  color: white;
-  font-size: 0.75rem;
-  font-weight: bold;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 20px;
-  line-height: 1;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); }
-}
-
-/* Orange Cart Button Styles */
-.orange-cart {
-  background: white !important;
-  border: 2px solid #ff8c00 !important;
-  padding: 0.4rem !important;
-  border-radius: 8px !important;
-  width: 40px !important;
-  height: 40px !important;
-}
-
-.orange-cart:hover {
-  background: #ff8c00 !important;
-  border-color: #ff8c00 !important;
-  transform: scale(1.05);
-  box-shadow: 0 3px 10px rgba(255, 140, 0, 0.3);
-}
-
-/* Enhanced Logout Button */
-.enhanced-logout {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background-color: white;
-  color: #ff8c00;
-  border: 2px solid #ff8c00;
-  padding: 0.5rem 1.2rem;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
-
-.enhanced-logout:hover {
-  background-color: #ff8c00;
-  color: white;
-  transform: translateY(-1px);
-  box-shadow: 0 3px 10px rgba(255, 140, 0, 0.3);
-}
-
-.logout-icon {
-  font-size: 1.1rem;
-  transition: transform 0.3s ease;
-}
-
-.enhanced-logout:hover .logout-icon {
-  transform: rotate(15deg);
-}
-
-.orange-cart .cart-icon {
-  color: #ff8c00 !important;
-  font-size: 1.2rem !important;
-}
-
-.orange-cart:hover .cart-icon {
-  color: white !important;
-}
-
-/* Auth Button Base Styles */
 .auth-btn {
-  padding: 0.6rem 1.2rem;
-  border-radius: 20px;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
   text-decoration: none;
-  font-weight: 600;
-  font-size: 0.9rem;
-  transition: all 0.3s ease;
-  border: 2px solid transparent;
+  font-weight: 500;
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
+  display: inline-block;
+  text-align: center;
   cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-.admin-btn {
-  background: linear-gradient(135deg, #673ab7, #9c27b0);
-  color: white;
-  border-color: #673ab7;
-}
-
-.admin-btn:hover {
-  background: linear-gradient(135deg, #5e35b1, #8e24aa);
-  border-color: #5e35b1;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(103, 58, 183, 0.3);
-  color: white;
-  text-decoration: none;
+  border: none;
+  background: none;
 }
 
 .signin-btn {
-  background: linear-gradient(135deg, #388e3c, #4caf50);
-  color: white;
-  border-color: #388e3c;
+  background-color: #388e3c;
+  max-height: 40px;
+  margin-top: 20px;
+  padding: 0 35px;
+  padding-top: 15px;
+  border-radius: 15px;
+  color: white !important;
+  font-weight: bolder;
 }
 
 .signin-btn:hover {
-  background: linear-gradient(135deg, #2e7d32, #388e3c);
-  border-color: #2e7d32;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(56, 142, 60, 0.3);
-  color: white;
-  text-decoration: none;
+  background-color: #1b5e20;
+  color: white !important;
 }
 
 .signup-btn {
-  background: transparent;
-  color: #388e3c;
-  border-color: #388e3c;
+  background: #388e3c;
+  color: white !important;
+  border: 1px solid transparent;
+  padding: 0.3rem 1rem;
 }
 
 .signup-btn:hover {
-  background: #388e3c;
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(56, 142, 60, 0.3);
-  text-decoration: none;
+  background: #2e7d32;
+  color: white !important;
+}
+
+.user-welcome {
+  color: #2d5016 !important;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-right: 1rem;
+  display: flex;
+  align-items: center;
+  text-decoration: none !important;
+  transition: all 0.3s ease;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  background: rgba(76, 175, 80, 0.1);
+  cursor: pointer;
+}
+
+.user-welcome:hover {
+  background: rgba(76, 175, 80, 0.2);
+  color: #388e3c !important;
+  transform: translateY(-1px);
+}
+
+.logout-btn {
+  background-color: #f44336;
+  border: 1px solid #f44336;
+  color: white !important;
+}
+
+.logout-btn:hover {
+  background-color: #d32f2f;
+  border-color: #d32f2f;
+  color: white !important;
 }
 
 /* Medium screens */
@@ -452,9 +338,9 @@
     margin-top: 0.5rem;
     border: 1px solid rgba(56,142,60,0.1);
   }
+
   .auth-buttons.open {
     display: flex;
-    align-items: center;
   }
 
   .auth-btn {
@@ -462,19 +348,6 @@
     padding: 1rem 1.5rem;
     border-radius: 25px;
     font-weight: 600;
-  }  .orange-cart {
-    order: -1;
-    margin-bottom: 0.5rem;
-    align-self: center;
-    width: 36px !important;
-    height: 36px !important;
-    padding: 0.3rem !important;
-  }
-  .enhanced-logout {
-    margin-top: 0.5rem;
-    width: 90%;
-    justify-content: center;
-    padding: 0.7rem 1rem !important;
   }
 
   .user-welcome {
@@ -482,9 +355,12 @@
     margin-right: 0;
     margin-bottom: 0.5rem;
     text-align: center;
-    order: 1;
-    padding: 0.5rem 0.8rem;
-    width: 90%;
-    border-radius: 6px;
+  }
+}
+
+/* Responsive adjustments for authenticated state */
+@media (max-width: 768px) {
+  .auth-buttons.open {
+    align-items: center;
   }
 }

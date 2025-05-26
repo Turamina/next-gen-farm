@@ -1,18 +1,16 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
-import { useCart } from './contexts/CartContext';
 import './Header.css';
 import logo from './assets/logo.jpeg';
 
 function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const { currentUser, userProfile, logout } = useAuth();
-  const { getCartItemCount } = useCart();
-  
-  const cartItemCount = getCartItemCount();
+  const { currentUser, logout } = useAuth();
+
   const handleMenuToggle = () => setMenuOpen(!menuOpen);
   const handleLinkClick = () => setMenuOpen(false);
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -21,9 +19,6 @@ function Header() {
       console.error('Failed to log out:', error);
     }
   };
-
-  // Check if current user is admin
-  const isAdmin = userProfile?.isAdmin === true;
 
   return (
     <nav className="header-nav">
@@ -74,19 +69,11 @@ function Header() {
             </Link>
           </li>
         </ul>
-      </div>      <div className={`auth-buttons${menuOpen ? ' open' : ''}`}>
+      </div>
+
+      <div className={`auth-buttons${menuOpen ? ' open' : ''}`}>
         {currentUser ? (
-          <>            <Link 
-              to="/profile?tab=cart" 
-              className="cart-link orange-cart" 
-              onClick={handleLinkClick}
-              title="View Cart"
-            >
-              <span className="cart-icon">🛒</span>
-              {cartItemCount > 0 && (
-                <span className="cart-count">{cartItemCount}</span>
-              )}
-            </Link>
+          <>
             <Link 
               to="/profile" 
               className="user-welcome" 
@@ -94,21 +81,11 @@ function Header() {
             >
               Welcome, {currentUser.displayName || currentUser.email}
             </Link>
-            {isAdmin && (
-              <Link 
-                to="/admin" 
-                className="auth-btn admin-btn" 
-                onClick={handleLinkClick}
-              >
-                Admin
-              </Link>
-            )}
             <button 
               onClick={handleLogout} 
-              className="auth-btn logout-btn enhanced-logout"
+              className="auth-btn logout-btn"
               type="button"
             >
-              <span className="logout-icon">🚪</span>
               Logout
             </button>
           </>
@@ -129,8 +106,8 @@ function Header() {
               Create Account
             </Link>
           </>
-        )}      </div>
-
+        )}
+      </div>
     </nav>
   );
 }

@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { auth } from '../firebaseConfig';
+import { userService } from '../services/userService';
 import './SignUp.css';
 
 function SignUp() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -15,6 +19,7 @@ function SignUp() {
     agreeToTerms: false
   });
   const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -70,11 +75,65 @@ function SignUp() {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = (e) => {
+  };  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert('Sign Up functionality is not implemented.');
+    
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsLoading(true);
+    setErrors({});
+
+    try {
+      // Create user account with Firebase
+      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      
+      // Update user profile with name
+      await updateProfile(userCredential.user, {
+        displayName: `${formData.firstName} ${formData.lastName}`
+      });
+      
+      // Create user profile in Firestore database
+      const userProfileData = {
+        email: formData.email,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        displayName: `${formData.firstName} ${formData.lastName}`,
+        phoneNumber: formData.phoneNumber,
+        farmName: formData.farmName,
+        address: {
+          street: formData.address,
+          city: '',
+          state: '',
+          zipCode: '',
+          country: 'USA'
+        }
+      };
+      
+      await userService.createUserProfile(userCredential.user.uid, userProfileData);
+      
+      console.log('User account and profile created successfully:', userCredential.user.email);
+      
+      // Success - redirect to home page
+      navigate('/');
+      
+    } catch (error) {
+      console.error('Error creating user:', error);
+      
+      let errorMessage = 'Failed to create account. Please try again.';
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'An account with this email already exists.';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'Password is too weak. Please choose a stronger password.';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Invalid email address.';
+      }
+      
+      setErrors({ submit: errorMessage });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -232,12 +291,17 @@ function SignUp() {
                 />
                 <span className="checkmark"></span>
                 I agree to the <Link to="/terms" className="terms-link">Terms and Conditions</Link> and <Link to="/privacy" className="terms-link">Privacy Policy</Link> *
-              </label>
-              {errors.agreeToTerms && <span className="error-message">{errors.agreeToTerms}</span>}
+              </label>            {errors.agreeToTerms && <span className="error-message">{errors.agreeToTerms}</span>}
             </div>
 
-            <button type="submit" className="signup-btn">
-              <span>Create Account</span>
+            {errors.submit && (
+              <div className="form-group">
+                <span className="error-message submit-error">{errors.submit}</span>
+              </div>
+            )}
+
+            <button type="submit" className="signup-btn" disabled={isLoading}>
+              <span>{isLoading ? 'Creating Account...' : 'Create Account'}</span>
               <div className="btn-icon">🌱</div>
             </button>
           </form>
