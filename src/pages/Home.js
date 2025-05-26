@@ -30,8 +30,8 @@ function Home() {
     <div className="home-container">
       <section className="hero-section">
         <div className="hero-content">
-          <h1>Fresh Farm Products Delivered to Your Door</h1>
-          <p>Experience the taste of nature with our premium farm-fresh dairy products</p>
+          {/* <h1>Fresh Farm Products Delivered to Your Door</h1> */}
+          {/* <p>Experience the taste of nature with our premium farm-fresh dairy products</p> */}
           <div className="hero-buttons">
             <Link to="/products" className="cta-button primary">View All Products</Link>
             <Link to="/about" className="cta-button secondary">Learn More</Link>
