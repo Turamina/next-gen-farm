@@ -48,7 +48,7 @@ class AdminService {
         rating: 0,
         reviews: []
       };
-
+   
       const docRef = await addDoc(collection(db, this.productsCollection), product);
       
       // Log admin action
