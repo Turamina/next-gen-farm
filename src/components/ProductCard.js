@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { useNavigate } from 'react-router-dom';
-import BuyNowPopup from './BuyNowPopup';
 import './ProductCard.css';
 
 // Add a style tag for custom animation
@@ -27,7 +26,6 @@ function ProductCard({ product }) {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [showMessage, setShowMessage] = useState('');
-  const [showBuyNowPopup, setShowBuyNowPopup] = useState(false);
 
   const handleAddToCart = async () => {
     if (!currentUser) {
@@ -57,8 +55,11 @@ function ProductCard({ product }) {
     }
   };
 
-  const handleBuyNow = (e) => {
-    if (e) e.stopPropagation();
+  const handleBuyNow = async (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     
     if (!currentUser) {
       setShowMessage('Please sign in to purchase');
@@ -66,26 +67,30 @@ function ProductCard({ product }) {
       return;
     }
 
-    // Open the popup
-    setShowBuyNowPopup(true);
-  };  const handlePopupClose = (message, redirectPath) => {
-    setShowBuyNowPopup(false);
-    
-    if (message) {
-      setShowMessage(message);
-      setTimeout(() => setShowMessage(''), 6000); // Show for 6 seconds
-    }
-    
-    // Handle redirect if provided
-    if (redirectPath) {
-      setTimeout(() => {
-        navigate(redirectPath);
-      }, 2000);
+    // Add the product to cart first
+    setIsAddingToCart(true);
+    try {
+      await addToCart({
+        productId: product.id,
+        productName: product.name,
+        productImage: product.image,
+        price: product.price,
+        quantity: quantity
+      });
+      
+      // Redirect to the cart page (Profile page with cart tab)
+      navigate('/profile?tab=cart');
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      setShowMessage('Failed to add to cart');
+      setTimeout(() => setShowMessage(''), 3000);
+    } finally {
+      setIsAddingToCart(false);
     }
   };
 
   return (
-    <div className="product-card">
+    <div className="product-card" onClick={(e) => e.stopPropagation()}>
       <style>{slideInRightAnimation}</style>
       <div className="product-image">
         <img 
@@ -97,7 +102,8 @@ function ProductCard({ product }) {
           }}
         />
       </div>
-      <div className="product-info">        <h3>{product.name}</h3>
+      <div className="product-info">
+        <h3>{product.name}</h3>
         <p className="product-description">{product.description}</p>
         <div className="product-footer">
           <span className="product-price">৳{product.price}</span>
@@ -105,7 +111,7 @@ function ProductCard({ product }) {
         {product.stock !== undefined && (
           <span className="stock-info">In Stock: {product.stock}</span>
         )}
-          <div className="product-actions">
+        <div className="product-actions">
           <div className="quantity-selector">
             <button 
               onClick={() => setQuantity(Math.max(1, quantity - 1))}
@@ -128,22 +134,21 @@ function ProductCard({ product }) {
             disabled={isAddingToCart || (product.stock && product.stock === 0)}
           >
             {isAddingToCart ? 'Adding...' : 'Add to Cart'}
-          </button>          <button 
+          </button>
+          <button 
             className="buy-now-btn"
-            onClick={handleBuyNow}
-            disabled={(product.stock && product.stock === 0)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleBuyNow(e);
+            }}
+            disabled={(product.stock && product.stock === 0) || isAddingToCart}
+            type="button"
           >
-            Buy Now
+            {isAddingToCart ? 'Processing...' : 'Buy Now'}
           </button>
         </div>
         
-        {showBuyNowPopup && (
-          <BuyNowPopup 
-            product={product}
-            onClose={handlePopupClose} 
-          />
-        )}
-
         {showMessage && (
           <div 
             className={`message ${showMessage.includes('success') || showMessage.includes('placed') ? 'success' : 'error'}`}

@@ -4,7 +4,7 @@ import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
 import { userService } from '../services/userService';
 import './SignUp.css';
-rana
+
 function SignUp() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -61,12 +61,10 @@ function SignUp() {
 
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
-    }
-
-    if (!formData.phoneNumber.trim()) {
+    }    if (!formData.phoneNumber.trim()) {
       newErrors.phoneNumber = 'Phone number is required';
-    } else if (!/^[0-9]{10}$/.test(formData.phoneNumber.replace(/[^0-9]/g, ''))) {
-      newErrors.phoneNumber = 'Please enter a valid 10-digit phone number';
+    } else if (!/^[0-9]{11}$/.test(formData.phoneNumber.replace(/[^0-9]/g, ''))) {
+      newErrors.phoneNumber = 'Please enter a valid 11-digit phone number';
     }
 
     if (!formData.agreeToTerms) {
@@ -192,15 +190,14 @@ function SignUp() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="phoneNumber">Phone Number *</label>
-              <input
+              <label htmlFor="phoneNumber">Phone Number *</label>              <input
                 type="tel"
                 id="phoneNumber"
                 name="phoneNumber"
                 value={formData.phoneNumber}
                 onChange={handleChange}
                 className={errors.phoneNumber ? 'error' : ''}
-                placeholder="Enter your phone number"
+                placeholder="Enter your 11-digit phone number"
               />
               {errors.phoneNumber && <span className="error-message">{errors.phoneNumber}</span>}
             </div>

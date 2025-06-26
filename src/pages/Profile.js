@@ -425,6 +425,146 @@ const Profile = () => {
       return 'Error formatting date';
     }
   };
+  // SSL Commerz Payment Gateway Integration
+  const initiateSslCommerzPayment = async () => {
+    if (cartItems.length === 0) {
+      setError('Your cart is empty. Please add items to your cart before checkout.');
+      return;
+    }
+    
+    // Check if profile has required delivery information
+    const hasRequiredInfo = 
+      profileData.address?.street && 
+      profileData.address?.city && 
+      profileData.address?.state && 
+      profileData.address?.zipCode && 
+      profileData.phoneNumber;
+    
+    if (!hasRequiredInfo) {
+      if (window.confirm('Your profile is missing some required delivery information. Would you like to update your profile first?')) {
+        setActiveTab('profile');
+        return;
+      }
+    }
+
+    setIsLoading(true);
+    setError('');
+    setMessage('Preparing your checkout. Please wait...');
+    
+    try {
+      // Create a unique transaction ID
+      const transactionId = 'NGF-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+      // Prepare order data for payment
+      const orderData = {
+        total_amount: getCartTotal(),
+        currency: 'BDT',
+        tran_id: transactionId,
+        success_url: window.location.origin + '/payment-success',
+        fail_url: window.location.origin + '/payment-failed',
+        cancel_url: window.location.origin + '/payment-canceled',
+        ipn_url: 'https://nextgenfarm.com/api/ipn', // You'll need to set up an IPN endpoint
+        shipping_method: 'Courier',
+        product_name: cartItems.map(item => item.productName).join(', ').substring(0, 255),
+        product_category: 'Farm Products',
+        product_profile: 'general',
+        cus_name: profileData.displayName || currentUser.displayName || 'Customer',
+        cus_email: profileData.email || currentUser.email,
+        cus_add1: profileData.address?.street || 'Address Line 1',
+        cus_add2: '',
+        cus_city: profileData.address?.city || 'City',
+        cus_state: profileData.address?.state || 'State',
+        cus_postcode: profileData.address?.zipCode || '1000',
+        cus_country: profileData.address?.country || 'Bangladesh',
+        cus_phone: profileData.phoneNumber || '01XXXXXXXXX',
+        ship_name: profileData.displayName || currentUser.displayName || 'Customer',
+        ship_add1: profileData.address?.street || 'Address Line 1',
+        ship_city: profileData.address?.city || 'City',
+        ship_state: profileData.address?.state || 'State',
+        ship_postcode: profileData.address?.zipCode || '1000',
+        ship_country: profileData.address?.country || 'Bangladesh',
+        multi_card_name: '',
+        value_a: currentUser.uid,
+        value_b: JSON.stringify(cartItems).substring(0, 255), // Limit size to prevent issues
+        value_c: '',
+        value_d: ''
+      };
+      // Store order data in localStorage for retrieval after payment completion
+      localStorage.setItem('pendingOrder', JSON.stringify({
+        orderData,
+        cartItems,
+        timestamp: Date.now()
+      }));
+      // Always use sandbox credentials and endpoint
+      // const storeId = 'testalgorj22u';
+      // const storePassword = 'testalgorj22u@ssl';
+      // Use official LIVE credentials and endpoint:
+      const storeId = 'algor685c511224e18';
+      const storePassword = 'algor685c511224e18@ssl';
+      const sslCommerzUrl = 'https://securepay.sslcommerz.com/gwprocess/v4/api.php';
+      // Try to use the payment service for redirection
+      try {
+        const { default: directGatewayRedirect, initiateSslCommerzPayment } = await import('../services/paymentService');
+        setMessage('Connecting to payment gateway...');
+        const paymentResponse = await initiateSslCommerzPayment({ ...orderData, store_id: storeId, store_passwd: storePassword, sslCommerzUrl });
+        // --- ENFORCE REDIRECT: Always redirect if GatewayPageURL is present ---
+        if (paymentResponse && (paymentResponse.GatewayPageURL || paymentResponse.gatewayPageURL)) {
+          window.location.href = paymentResponse.GatewayPageURL || paymentResponse.gatewayPageURL;
+          return;
+        }
+        // --- fallback: try directGatewayRedirect ---
+        if (paymentResponse && paymentResponse.redirectGatewayURL) {
+          window.location.href = paymentResponse.redirectGatewayURL;
+          return;
+        }
+        const redirected = directGatewayRedirect({ ...orderData, store_id: storeId, store_passwd: storePassword });
+        if (redirected) {
+          return;
+        }
+      } catch (paymentError) {
+        console.error('Payment service methods failed:', paymentError);
+        // Continue with manual form submission if both methods fail
+      }
+      // If both service methods failed, use a direct form submission as last resort
+      setMessage('Trying alternative payment method...');
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = sslCommerzUrl;
+      form.target = '_self';
+      const addField = (name, value) => {
+        const field = document.createElement('input');
+        field.type = 'hidden';
+        field.name = name;
+        field.value = value;
+        form.appendChild(field);
+      };
+      addField('store_id', storeId);
+      addField('store_passwd', storePassword);
+      Object.entries(orderData).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          addField(key, value);
+        }
+      });
+      localStorage.setItem('pendingTransactionId', orderData.tran_id);
+      document.body.appendChild(form);
+      form.submit();
+      setTimeout(() => {
+        setError('Payment gateway connection timeout. Please try again later.');
+        setIsLoading(false);
+      }, 10000); // 10 seconds timeout
+      
+    } catch (error) {
+      console.error('Error initiating payment:', error);
+      let errorMessage = 'Failed to initiate payment. Please try again.';
+      
+      // Display more detailed error information
+      if (error.message) {
+        errorMessage += ` Error details: ${error.message}`;
+      }
+      
+      setError(errorMessage);
+      setIsLoading(false);
+    }
+  };
 
   if (!currentUser) {
     return (
@@ -787,21 +927,19 @@ const Profile = () => {
                           </button>
                         </div>                        <div className="cart-item-total">
                           ৳{(item.price * item.quantity).toFixed(2)}
-                        </div>
-                        <button 
-                          className="remove-item-btn"
+                        </div>                        <button 
+                          className="cancel-item-btn"
                           onClick={() => removeFromCart(item.id)}
                           title="Remove from cart"
                         >
-                          ×
+                          Cancel
                         </button>
                       </div>
                     ))}
                   </div>                  <div className="cart-summary">
                     <div className="cart-total">
                       <h3>Total: ৳{getCartTotal().toFixed(2)}</h3>
-                    </div>
-                    <div className="cart-actions">
+                    </div>                    <div className="cart-actions">
                       <button 
                         className="clear-cart-btn"
                         onClick={clearCart}
@@ -810,10 +948,66 @@ const Profile = () => {
                       </button>
                       <Link to="/products" className="continue-shopping-btn">
                         Continue Shopping
-                      </Link>
-                      <Link to="/checkout" className="checkout-btn">
-                        Proceed to Checkout
-                      </Link>
+                      </Link>                      <button 
+                        className="checkout-btn"
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          setIsLoading(true);
+                          setError("");
+                          setMessage("Connecting to payment gateway...");
+                          try {
+                            const { initiateSslCommerzPayment } = await import("../services/paymentService");
+                            const orderData = {
+                              total_amount: getCartTotal(),
+                              currency: 'BDT',
+                              tran_id: 'NGF-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+                              success_url: window.location.origin + '/payment-success',
+                              fail_url: window.location.origin + '/payment-failed',
+                              cancel_url: window.location.origin + '/payment-canceled',
+                              ipn_url: 'https://nextgenfarm.com/api/ipn',
+                              shipping_method: 'Courier',
+                              product_name: cartItems.map(item => item.productName).join(', ').substring(0, 255),
+                              product_category: 'Farm Products',
+                              product_profile: 'general',
+                              cus_name: profileData.displayName || currentUser.displayName || 'Customer',
+                              cus_email: profileData.email || currentUser.email,
+                              cus_add1: profileData.address?.street || 'Address Line 1',
+                              cus_add2: '',
+                              cus_city: profileData.address?.city || 'City',
+                              cus_state: profileData.address?.state || 'State',
+                              cus_postcode: profileData.address?.zipCode || '1000',
+                              cus_country: profileData.address?.country || 'Bangladesh',
+                              cus_phone: profileData.phoneNumber || '01XXXXXXXXX',
+                              ship_name: profileData.displayName || currentUser.displayName || 'Customer',
+                              ship_add1: profileData.address?.street || 'Address Line 1',
+                              ship_city: profileData.address?.city || 'City',
+                              ship_state: profileData.address?.state || 'State',
+                              ship_postcode: profileData.address?.zipCode || '1000',
+                              ship_country: profileData.address?.country || 'Bangladesh',
+                              multi_card_name: '',
+                              value_a: currentUser.uid,
+                              value_b: JSON.stringify(cartItems).substring(0, 255),
+                              value_c: '',
+                              value_d: ''
+                            };
+                            const paymentResponse = await initiateSslCommerzPayment(orderData);
+                            if (paymentResponse && (paymentResponse.GatewayPageURL || paymentResponse.gatewayPageURL)) {
+                              window.location.href = paymentResponse.GatewayPageURL || paymentResponse.gatewayPageURL;
+                            } else if (paymentResponse && paymentResponse.redirectGatewayURL) {
+                              window.location.href = paymentResponse.redirectGatewayURL;
+                            } else {
+                              setError("Failed to connect to payment gateway. Please try again.");
+                            }
+                          } catch (err) {
+                            setError("Payment initiation failed: " + (err.message || err));
+                          } finally {
+                            setIsLoading(false);
+                          }
+                        }}
+                        disabled={isLoading || cartItems.length === 0}
+                      >
+                        {isLoading ? 'Processing...' : 'Proceed to Checkout'}
+                      </button>
                     </div>
                   </div>
                 </>

@@ -14,6 +14,9 @@ import ForgotPassword from './pages/ForgotPassword';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
 import Admin from './pages/Admin';
+import PaymentSuccess from './pages/PaymentSuccess';
+import PaymentFailed from './pages/PaymentFailed';
+import PaymentCanceled from './pages/PaymentCanceled';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
@@ -305,6 +308,9 @@ function App() {
               } />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/payment-success" element={<PaymentSuccess />} />
+              <Route path="/payment-failed" element={<PaymentFailed />} />
+              <Route path="/payment-canceled" element={<PaymentCanceled />} />
             </Routes>
             </main>
             <Footer />

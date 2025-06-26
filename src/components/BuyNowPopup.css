@@ -12,6 +12,7 @@
   pointer-events: all;
   user-select: none;
   animation: fadeIn 0.2s ease-out;
+  overflow: hidden;
 }
 
 @keyframes fadeIn {
@@ -155,6 +156,8 @@
   border-radius: 4px;
   padding: 3px;
   border: 1px solid #eee;
+  flex-wrap: wrap;
+  gap: 5px;
 }
 
 .qty-btn {
@@ -299,4 +302,49 @@
 /* Styling to make the spinner container fit within the popup */
 .loading-overlay .loading-container {
   background: transparent;
+}
+
+.cancel-item-btn {
+  background: #ff4444;
+  border: none;
+  padding: 5px 8px;
+  border-radius: 4px;
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cancel-item-btn:hover {
+  background: #cc0000;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(204, 0, 0, 0.3);
+}
+
+/* Mobile styles */
+@media (max-width: 576px) {
+  .product-item {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 15px;
+  }
+  
+  .product-checkbox {
+    margin-bottom: 10px;
+    width: 100%;
+  }
+  
+  .quantity-controls {
+    width: 100%;
+    justify-content: flex-start;
+    margin-top: 10px;
+  }
+  
+  .cancel-item-btn {
+    margin-left: auto;
+  }
 }

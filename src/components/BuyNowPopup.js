@@ -49,7 +49,6 @@ function BuyNowPopup({ product, onClose }) {
   const handleContentClick = (e) => {
     e.stopPropagation();
   };
-
   // Initialize products, including both the current product and cart items
   useEffect(() => {
     const productList = [];
@@ -58,13 +57,16 @@ function BuyNowPopup({ product, onClose }) {
 
     // First add cart items
     cartItems.forEach((cartItem) => {
-      productList.push({
+      const cartItemProduct = {
         id: cartItem.productId,
         name: cartItem.productName,
         price: cartItem.price,
         image: cartItem.productImage,
         quantity: cartItem.quantity,
-      });
+        cartItemId: cartItem.id, // Store the cart item ID for removal later
+      };
+      
+      productList.push(cartItemProduct);
       quantityMap[cartItem.productId] = cartItem.quantity;
       selectedMap[cartItem.productId] = true; // Cart items selected by default
     });
@@ -135,16 +137,15 @@ function BuyNowPopup({ product, onClose }) {
     if (!currentUser) {
       setErrorMessage('You must be logged in to place an order.');
       return;
-    }
-
-    const selectedItems = allProducts
+    }    const selectedItems = allProducts
       .filter((product) => selectedProducts[product.id])
       .map((product) => ({
         productId: product.id,
-        productName: product.name,
-        productImage: product.image,
+        productName: product.name || product.productName,
+        productImage: product.image || product.productImage,
         price: product.price,
         quantity: quantities[product.id] || 1,
+        cartItemId: product.cartItemId // Keep the cart item ID for later removal
       }));
 
     if (selectedItems.length === 0) {
@@ -186,16 +187,20 @@ function BuyNowPopup({ product, onClose }) {
         },
         paymentMethod: 'cash_on_delivery',
         estimatedDelivery: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) // 3 days from now
-      };
-
-      // Place the order
+      };      // Place the order
       const result = await orderService.createOrder(currentUser.uid, orderData);
       
       // Remove all selected items that were in cart
       for (const item of selectedItems) {
-        const cartItem = cartItems.find(ci => ci.productId === item.productId);
-        if (cartItem) {
-          await removeFromCart(cartItem.id);
+        if (item.cartItemId) {
+          // If item has a cartItemId, it was from the cart - remove it directly
+          await removeFromCart(item.cartItemId);
+        } else {
+          // If no cartItemId, check if it's in the cart by productId
+          const cartItem = cartItems.find(ci => ci.productId === item.productId);
+          if (cartItem) {
+            await removeFromCart(cartItem.id);
+          }
         }
       }
       
@@ -223,22 +228,29 @@ function BuyNowPopup({ product, onClose }) {
       setIsProcessing(false);
     }
   };
-
   // Create portal to render popup outside component hierarchy
   return ReactDOM.createPortal(
     <div 
       className="buy-now-popup" 
       ref={popupRef}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
     >
       <div 
         className="popup-content" 
         ref={contentRef}
-        onClick={handleContentClick}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          handleContentClick(e);
+        }}
       >
-        <h2>Buy Now</h2>
-        <button 
+        <h2>Buy Now</h2>        <button 
           className="close-btn" 
           onClick={(e) => {
+            e.preventDefault();
             e.stopPropagation();
             onClose();
           }} 
@@ -248,9 +260,7 @@ function BuyNowPopup({ product, onClose }) {
         </button>
 
         {errorMessage && <div className="error-message">{errorMessage}</div>}
-        {successMessage && <div className="success-message">{successMessage}</div>}
-
-        <div className="product-selection">
+        {successMessage && <div className="success-message">{successMessage}</div>}        <div className="product-selection">
           {allProducts.map((prod) => (
             <div key={prod.id} className="product-item">
               <div className="product-checkbox">
@@ -262,21 +272,19 @@ function BuyNowPopup({ product, onClose }) {
                 />
                 <label htmlFor={`product-${prod.id}`}>
                   <img
-                    src={prod.image || '/api/placeholder/60/60'}
-                    alt={prod.name}
+                    src={prod.image || prod.productImage || '/api/placeholder/60/60'}
+                    alt={prod.name || prod.productName}
                     className="product-thumbnail"
                     onError={(e) => {
                       e.target.src = '/api/placeholder/60/60';
                     }}
                   />
                   <div className="product-info">
-                    <span className="product-name">{prod.name}</span>
+                    <span className="product-name">{prod.name || prod.productName}</span>
                     <span className="product-price">৳{prod.price}</span>
                   </div>
                 </label>
-              </div>
-
-              <div className="quantity-controls">
+              </div><div className="quantity-controls">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -297,7 +305,32 @@ function BuyNowPopup({ product, onClose }) {
                   className="qty-btn"
                 >
                   +
-                </button>
+                </button>                {cartItems.some(item => item.productId === prod.id) && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Find the cart item by product ID
+                      const cartItem = cartItems.find(item => item.productId === prod.id);
+                      if (cartItem) {
+                        if (window.confirm('Remove this item from cart?')) {
+                          removeFromCart(cartItem.id);
+                          // Also update the local state to remove it from the display
+                          setAllProducts(prev => prev.filter(p => p.id !== prod.id));
+                          const newQuantities = {...quantities};
+                          delete newQuantities[prod.id];
+                          setQuantities(newQuantities);
+                          const newSelected = {...selectedProducts};
+                          delete newSelected[prod.id];
+                          setSelectedProducts(newSelected);
+                        }
+                      }
+                    }}
+                    className="cancel-item-btn"
+                    title="Remove from cart"
+                  >
+                    Cancel
+                  </button>
+                )}
               </div>
             </div>
           ))}
@@ -314,12 +347,11 @@ function BuyNowPopup({ product, onClose }) {
             <span>Total:</span>
             <span>৳{calculateTotal().toFixed(2)}</span>
           </div>
-        </div>
-
-        <div className="popup-footer">
+        </div>        <div className="popup-footer">
           <button 
             className="cancel-btn" 
             onClick={(e) => {
+              e.preventDefault();
               e.stopPropagation();
               onClose();
             }}
@@ -329,6 +361,7 @@ function BuyNowPopup({ product, onClose }) {
           <button
             className="confirm-btn"
             onClick={(e) => {
+              e.preventDefault();
               e.stopPropagation();
               handleConfirm();
             }}

@@ -256,10 +256,9 @@ export const orderService = {
         tax: orderData.tax || 0,
         shipping: orderData.shipping || 0,
         discount: orderData.discount || 0,
-        
-        // Order Status
-        status: 'pending', // pending, confirmed, processing, shipped, delivered, cancelled
-        paymentStatus: 'pending', // pending, paid, failed, refunded
+          // Order Status
+        status: orderData.status || 'pending', // pending, confirmed, processing, shipped, delivered, cancelled
+        paymentStatus: orderData.paymentStatus || 'pending', // pending, paid, failed, refunded
         
         // Delivery Information
         deliveryAddress: orderData.deliveryAddress || {
@@ -267,15 +266,17 @@ export const orderService = {
           city: '',
           state: '',
           zipCode: '',
-          country: 'India',
+          country: 'Bangladesh',
           phone: ''
         },
         deliveryDate: orderData.deliveryDate || null,
         deliveryTimeSlot: orderData.deliveryTimeSlot || null,
         deliveryInstructions: orderData.deliveryInstructions || '',
-          // Payment Information
+        
+        // Payment Information
         paymentMethod: orderData.paymentMethod || 'cash_on_delivery',
         paymentId: orderData.paymentId || null,
+        paymentDetails: orderData.paymentDetails || null,
         
         // Timestamps
         createdAt: new Date(),
