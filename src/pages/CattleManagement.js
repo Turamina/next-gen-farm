@@ -91,9 +91,29 @@ const CattleManagement = () => {
         const stats = await cattleService.getCattleStats(currentUser.uid);
         console.log('Stats loaded:', stats);
         setCattleStats(stats);
-        setFeedingSuggestions(stats.feedingRequirements);
+        
+        // Make sure feeding suggestions are properly set
+        if (stats.feedingRequirements) {
+          console.log('Feeding requirements:', stats.feedingRequirements);
+          setFeedingSuggestions(stats.feedingRequirements);
+        } else {
+          // If no feeding requirements, calculate them manually
+          console.log('Calculating feeding requirements manually...');
+          const manualSuggestions = cattleService.calculateFeedingRequirements(cattleData);
+          console.log('Manual feeding suggestions:', manualSuggestions);
+          setFeedingSuggestions(manualSuggestions);
+        }
       } catch (statsError) {
         console.error('Error loading stats:', statsError);
+        
+        // Calculate feeding suggestions manually if stats fail
+        if (cattleData.length > 0) {
+          console.log('Calculating feeding suggestions from cattle data...');
+          const feedingSuggestions = cattleService.calculateFeedingRequirements(cattleData);
+          console.log('Manual feeding suggestions:', feedingSuggestions);
+          setFeedingSuggestions(feedingSuggestions);
+        }
+        
         // Don't fail the whole operation if stats fail
         setCattleStats({
           totalCattle: cattleData.length,
@@ -101,7 +121,7 @@ const CattleManagement = () => {
           byGender: { male: 0, female: 0 },
           byAge: { calves: 0, young: 0, adult: 0 },
           totalProduction: { dailyMilk: 0, dailyEggs: 0 },
-          feedingRequirements: { totalDailyFeed: 0, totalDailyCost: 0, individualSuggestions: [] }
+          feedingRequirements: feedingSuggestions || { totalDailyFeed: 0, totalDailyCost: 0, individualSuggestions: [] }
         });
       }
       
@@ -125,9 +145,15 @@ const CattleManagement = () => {
 
     try {
       setLoading(true);
-      await cattleService.addCattle(currentUser.uid, cattleForm);
+      
+      // Add the cattle
+      const newCattle = await cattleService.addCattle(currentUser.uid, cattleForm);
+      console.log('New cattle added:', newCattle);
+      
       setSuccess('Cattle added successfully!');
       setShowAddForm(false);
+      
+      // Reset form
       setCattleForm({
         tagNumber: '',
         name: '',
@@ -160,10 +186,13 @@ const CattleManagement = () => {
         },
         notes: ''
       });
+      
+      // Reload all data to get updated AI suggestions
       await loadCattleData();
+      
     } catch (err) {
       console.error('Error adding cattle:', err);
-      setError('Failed to add cattle');
+      setError(`Failed to add cattle: ${err.message || 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -401,61 +430,123 @@ const CattleManagement = () => {
       )}
 
       {/* AI Feeding Guide Tab */}
-      {activeTab === 'feeding' && feedingSuggestions && (
+      {activeTab === 'feeding' && (
         <div className="feeding-tab">
-          <div className="feeding-overview">
-            <h2>🤖 AI-Powered Feeding Recommendations</h2>
-            <div className="feeding-summary">
-              <div className="summary-item">
-                <strong>Total Daily Feed:</strong> {feedingSuggestions.totalDailyFeed} kg
+          {cattle.length > 0 ? (
+            <>
+              {/* Manual recalculate button for debugging */}
+              <div style={{ marginBottom: '20px' }}>
+                <button 
+                  className="btn-secondary"
+                  onClick={async () => {
+                    console.log('Manually recalculating feeding suggestions...');
+                    console.log('Current cattle:', cattle);
+                    const newSuggestions = cattleService.calculateFeedingRequirements(cattle);
+                    console.log('New suggestions:', newSuggestions);
+                    setFeedingSuggestions(newSuggestions);
+                    setSuccess('AI feeding recommendations updated!');
+                  }}
+                >
+                  🔄 Refresh AI Calculations
+                </button>
               </div>
-              <div className="summary-item">
-                <strong>Daily Cost:</strong> ৳{feedingSuggestions.totalDailyCost}
-              </div>
-              <div className="summary-item">
-                <strong>Monthly Cost:</strong> ৳{feedingSuggestions.totalMonthlyCost}
-              </div>
-            </div>
-          </div>
 
-          <div className="feeding-schedule">
-            <h3>Recommended Feeding Schedule</h3>
-            <div className="schedule-grid">
-              {Object.entries(feedingSuggestions.feedingSchedule).map(([time, schedule]) => (
-                <div key={time} className="schedule-item">
-                  <h4>{schedule.time}</h4>
-                  <p>{schedule.percentage}% of daily feed</p>
-                  <small>{schedule.notes}</small>
+              {feedingSuggestions && feedingSuggestions.individualSuggestions && feedingSuggestions.individualSuggestions.length > 0 ? (
+                <>
+                  <div className="feeding-overview">
+                    <h2>🤖 AI-Powered Feeding Recommendations</h2>
+                    <div className="feeding-summary">
+                      <div className="summary-item">
+                        <strong>Total Daily Feed:</strong> {feedingSuggestions.totalDailyFeed} kg
+                      </div>
+                      <div className="summary-item">
+                        <strong>Daily Cost:</strong> ৳{feedingSuggestions.totalDailyCost}
+                      </div>
+                      <div className="summary-item">
+                        <strong>Monthly Cost:</strong> ৳{feedingSuggestions.totalMonthlyCost}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="feeding-schedule">
+                    <h3>Recommended Feeding Schedule</h3>
+                    <div className="schedule-grid">
+                      {Object.entries(feedingSuggestions.feedingSchedule).map(([time, schedule]) => (
+                        <div key={time} className="schedule-item">
+                          <h4>{schedule.time}</h4>
+                          <p>{schedule.percentage}% of daily feed</p>
+                          <small>{schedule.notes}</small>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="individual-suggestions">
+                    <h3>Individual Cattle Feeding</h3>
+                    <div className="suggestions-list">
+                      {feedingSuggestions.individualSuggestions.map((suggestion) => (
+                        <div key={suggestion.cattleId} className="suggestion-card">
+                          <h4>{suggestion.cattleName}</h4>
+                          <p><strong>Daily Feed:</strong> {suggestion.dailyFeedKg} kg</p>
+                          <p><strong>Daily Cost:</strong> ৳{suggestion.dailyCost}</p>
+                          <p><strong>Feed Type:</strong> {suggestion.feedType}</p>
+                          {suggestion.specialNotes && (
+                            <p><strong>Notes:</strong> {suggestion.specialNotes}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="nutritional-tips">
+                    <h3>💡 Nutritional Tips</h3>
+                    <ul>
+                      {feedingSuggestions.nutritionalTips.map((tip, index) => (
+                        <li key={index}>{tip}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </>
+              ) : (
+                <div className="no-data">
+                  <h3>🤖 Calculating AI Recommendations...</h3>
+                  <p>You have {cattle.length} cattle. AI is processing feeding requirements...</p>
+                  <button 
+                    className="btn-primary"
+                    onClick={async () => {
+                      console.log('Calculating feeding suggestions for cattle:', cattle);
+                      const suggestions = cattleService.calculateFeedingRequirements(cattle);
+                      console.log('Calculated suggestions:', suggestions);
+                      setFeedingSuggestions(suggestions);
+                    }}
+                  >
+                    🤖 Generate AI Feeding Plan
+                  </button>
                 </div>
-              ))}
+              )}
+            </>
+          ) : (
+            <div className="no-data">
+              <h3>🤖 AI Feeding Guide</h3>
+              <p>Add cattle to your farm to get personalized AI-powered feeding recommendations.</p>
+              <div className="feeding-info">
+                <h4>What you'll get:</h4>
+                <ul>
+                  <li>📊 Daily feed requirements for each animal</li>
+                  <li>💰 Cost calculations and budget planning</li>
+                  <li>⏰ Optimal feeding schedule (3 times daily)</li>
+                  <li>🥗 Nutritional tips based on your herd</li>
+                  <li>🎯 Special requirements for pregnant, young, or sick animals</li>
+                </ul>
+              </div>
+              <button 
+                className="btn-primary"
+                onClick={() => setShowAddForm(true)}
+              >
+                + Add Cattle to Get AI Recommendations
+              </button>
             </div>
-          </div>
-
-          <div className="individual-suggestions">
-            <h3>Individual Cattle Feeding</h3>
-            <div className="suggestions-list">
-              {feedingSuggestions.individualSuggestions.map((suggestion) => (
-                <div key={suggestion.cattleId} className="suggestion-card">
-                  <h4>{suggestion.cattleName}</h4>
-                  <p><strong>Daily Feed:</strong> {suggestion.dailyFeedKg} kg</p>
-                  <p><strong>Daily Cost:</strong> ৳{suggestion.dailyCost}</p>
-                  <p><strong>Feed Type:</strong> {suggestion.feedType}</p>
-                  {suggestion.specialNotes && (
-                    <p><strong>Notes:</strong> {suggestion.specialNotes}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="nutritional-tips">
-            <h3>💡 Nutritional Tips</h3>
-            <ul>
-              {feedingSuggestions.nutritionalTips.map((tip, index) => (
-                <li key={index}>{tip}</li>
-              ))}
-            </ul>
-          </div>
+          )}
         </div>
       )}
 

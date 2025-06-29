@@ -599,6 +599,59 @@
   content: "✅";
 }
 
+/* No Data States */
+.no-data {
+  text-align: center;
+  padding: 50px 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  margin: 20px 0;
+}
+
+.no-data h3 {
+  color: #2c3e50;
+  font-size: 1.5em;
+  margin-bottom: 15px;
+}
+
+.no-data p {
+  color: #6c757d;
+  font-size: 1.1em;
+  margin-bottom: 25px;
+  line-height: 1.6;
+}
+
+.feeding-info {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+  text-align: left;
+}
+
+.feeding-info h4 {
+  color: #2c3e50;
+  margin-bottom: 15px;
+  font-size: 1.2em;
+}
+
+.feeding-info ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.feeding-info li {
+  padding: 8px 0;
+  color: #495057;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.feeding-info li:last-child {
+  border-bottom: none;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .cattle-management {

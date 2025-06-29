@@ -237,6 +237,99 @@ export const cattleService = {
     let totalDailyFeed = 0;
     let totalCost = 0;
     
+    // Helper function for generating feeding notes
+    const generateFeedingNotes = (animal) => {
+      const notes = [];
+      
+      if (animal.age < 6) {
+        notes.push('Young animal - provide high-quality starter feed');
+      }
+      
+      if (animal.type === 'dairy' && animal.production?.dailyOutput > 15) {
+        notes.push('High milk producer - increase protein and energy in feed');
+      }
+      
+      if (animal.healthStatus === 'pregnant') {
+        notes.push('Pregnant - increase calcium and folic acid supplements');
+      }
+      
+      if (animal.weight < 300) {
+        notes.push('Below average weight - consider increasing feed portions');
+      }
+      
+      return notes.join('; ');
+    };
+
+    // Helper function for recommended feed types
+    const getRecommendedFeedTypes = (cattle) => {
+      const feedTypes = new Set();
+      
+      cattle.forEach(animal => {
+        if (animal.type === 'dairy') {
+          feedTypes.add('High-protein dairy concentrate');
+          feedTypes.add('Alfalfa hay');
+        } else if (animal.type === 'beef') {
+          feedTypes.add('Corn silage');
+          feedTypes.add('Grass hay');
+        }
+        
+        if (animal.age < 12) {
+          feedTypes.add('Calf starter feed');
+        }
+      });
+      
+      return Array.from(feedTypes);
+    };
+
+    // Helper function for feeding schedule
+    const generateFeedingSchedule = () => {
+      return {
+        morning: {
+          time: '6:00 AM',
+          percentage: 40,
+          notes: 'Main feeding with concentrates'
+        },
+        midday: {
+          time: '12:00 PM',
+          percentage: 20,
+          notes: 'Light feeding, mostly roughage'
+        },
+        evening: {
+          time: '6:00 PM',
+          percentage: 40,
+          notes: 'Second main feeding'
+        }
+      };
+    };
+
+    // Helper function for nutritional tips
+    const getNutritionalTips = (cattle) => {
+      const tips = [
+        'Ensure fresh water is available at all times',
+        'Provide mineral supplements twice a week',
+        'Monitor body condition score monthly',
+        'Rotate pastures to prevent overgrazing'
+      ];
+      
+      const hasYoungAnimals = cattle.some(animal => animal.age < 12);
+      const hasDairyCows = cattle.some(animal => animal.type === 'dairy');
+      const hasPregnantAnimals = cattle.some(animal => animal.healthStatus === 'pregnant');
+      
+      if (hasYoungAnimals) {
+        tips.push('Young animals need 18-20% protein in their diet');
+      }
+      
+      if (hasDairyCows) {
+        tips.push('Dairy cows need 16-18% protein for optimal milk production');
+      }
+      
+      if (hasPregnantAnimals) {
+        tips.push('Pregnant animals need extra calcium and phosphorus');
+      }
+      
+      return tips;
+    };
+    
     cattle.forEach(animal => {
       let dailyFeedKg = 0;
       let feedCostPerKg = 0.5; // Base cost per kg of feed
@@ -286,7 +379,7 @@ export const cattleService = {
         dailyFeedKg: Math.round(dailyFeedKg * 100) / 100,
         dailyCost: Math.round(dailyCost * 100) / 100,
         feedType: animal.type === 'dairy' ? 'High-protein dairy feed' : 'Standard cattle feed',
-        specialNotes: this.generateFeedingNotes(animal)
+        specialNotes: generateFeedingNotes(animal)
       });
     });
     
@@ -295,99 +388,10 @@ export const cattleService = {
       totalDailyFeed: Math.round(totalDailyFeed * 100) / 100,
       totalDailyCost: Math.round(totalCost * 100) / 100,
       totalMonthlyCost: Math.round(totalCost * 30 * 100) / 100,
-      recommendedFeedTypes: this.getRecommendedFeedTypes(cattle),
-      feedingSchedule: this.generateFeedingSchedule(),
-      nutritionalTips: this.getNutritionalTips(cattle)
+      recommendedFeedTypes: getRecommendedFeedTypes(cattle),
+      feedingSchedule: generateFeedingSchedule(),
+      nutritionalTips: getNutritionalTips(cattle)
     };
-  },
-
-  generateFeedingNotes: (animal) => {
-    const notes = [];
-    
-    if (animal.age < 6) {
-      notes.push('Young animal - provide high-quality starter feed');
-    }
-    
-    if (animal.type === 'dairy' && animal.production?.dailyOutput > 15) {
-      notes.push('High milk producer - increase protein and energy in feed');
-    }
-    
-    if (animal.healthStatus === 'pregnant') {
-      notes.push('Pregnant - increase calcium and folic acid supplements');
-    }
-    
-    if (animal.weight < 300) {
-      notes.push('Below average weight - consider increasing feed portions');
-    }
-    
-    return notes.join('; ');
-  },
-
-  getRecommendedFeedTypes: (cattle) => {
-    const feedTypes = new Set();
-    
-    cattle.forEach(animal => {
-      if (animal.type === 'dairy') {
-        feedTypes.add('High-protein dairy concentrate');
-        feedTypes.add('Alfalfa hay');
-      } else if (animal.type === 'beef') {
-        feedTypes.add('Corn silage');
-        feedTypes.add('Grass hay');
-      }
-      
-      if (animal.age < 12) {
-        feedTypes.add('Calf starter feed');
-      }
-    });
-    
-    return Array.from(feedTypes);
-  },
-
-  generateFeedingSchedule: () => {
-    return {
-      morning: {
-        time: '6:00 AM',
-        percentage: 40,
-        notes: 'Main feeding with concentrates'
-      },
-      midday: {
-        time: '12:00 PM',
-        percentage: 20,
-        notes: 'Light feeding, mostly roughage'
-      },
-      evening: {
-        time: '6:00 PM',
-        percentage: 40,
-        notes: 'Second main feeding'
-      }
-    };
-  },
-
-  getNutritionalTips: (cattle) => {
-    const tips = [
-      'Ensure fresh water is available at all times',
-      'Provide mineral supplements twice a week',
-      'Monitor body condition score monthly',
-      'Rotate pastures to prevent overgrazing'
-    ];
-    
-    const hasYoungAnimals = cattle.some(animal => animal.age < 12);
-    const hasDairyCows = cattle.some(animal => animal.type === 'dairy');
-    const hasPregnantAnimals = cattle.some(animal => animal.healthStatus === 'pregnant');
-    
-    if (hasYoungAnimals) {
-      tips.push('Young animals need 18-20% protein in their diet');
-    }
-    
-    if (hasDairyCows) {
-      tips.push('Dairy cows need 16-18% protein for optimal milk production');
-    }
-    
-    if (hasPregnantAnimals) {
-      tips.push('Pregnant animals need extra calcium and phosphorus');
-    }
-    
-    return tips;
   },
 
   // Get cattle statistics for dashboard
