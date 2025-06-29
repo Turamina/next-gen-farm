@@ -5,9 +5,51 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: #f8f9fa;
+  color: #2c3e50;
+  line-height: 1.6;
 }
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+/* Global improvements for better text visibility */
+* {
+  box-sizing: border-box;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #2c3e50;
+  font-weight: 600;
+  text-rendering: optimizeLegibility;
+}
+
+p, span, div {
+  color: #2c3e50;
+  text-rendering: optimizeLegibility;
+}
+
+/* Ensure all text has sufficient contrast */
+.text-muted {
+  color: #495057 !important;
+}
+
+/* Better button defaults */
+button {
+  font-family: inherit;
+  text-rendering: optimizeLegibility;
+}
+
+/* Better link visibility */
+a {
+  color: #27ae60;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: #2c3e50;
+  text-decoration: underline;
 }
