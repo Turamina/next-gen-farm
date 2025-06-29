@@ -373,6 +373,160 @@
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+/* Account Type Selection Styles */
+.account-type-group {
+  margin-bottom: 2rem;
+}
+
+.account-type-group label {
+  font-weight: 600;
+  color: #2e7d32;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.account-type-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.account-type-option {
+  border: 2px solid #e8f5e9;
+  border-radius: 12px;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: #fafafa;
+  position: relative;
+  overflow: hidden;
+}
+
+.account-type-option::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 0;
+}
+
+.account-type-option:hover {
+  border-color: #66bb6a;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(56, 142, 60, 0.15);
+}
+
+.account-type-option:hover::before {
+  opacity: 1;
+}
+
+.account-type-option.selected {
+  border-color: #4caf50;
+  background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
+  box-shadow: 0 5px 20px rgba(56, 142, 60, 0.2);
+}
+
+.account-type-option.selected::before {
+  opacity: 1;
+}
+
+.account-type-option input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.option-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.option-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+  filter: grayscale(0.3);
+  transition: filter 0.3s ease;
+}
+
+.account-type-option.selected .option-icon,
+.account-type-option:hover .option-icon {
+  filter: grayscale(0);
+}
+
+.option-text h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2e7d32;
+}
+
+.option-text p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #666;
+  line-height: 1.4;
+}
+
+.option-text small {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #888;
+  display: block;
+  font-style: italic;
+}
+
+.account-type-option.selected .option-text h3 {
+  color: #1b5e20;
+}
+
+.account-type-option.selected .option-text p {
+  color: #2e7d32;
+}
+
+.account-type-option.selected .option-text small {
+  color: #555;
+}
+
+.field-note {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #666;
+  font-style: italic;
+  line-height: 1.3;
+}
+
+@media (max-width: 640px) {
+  .account-type-options {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  .account-type-option {
+    padding: 1.25rem;
+  }
+  
+  .option-content {
+    flex-direction: row;
+    text-align: left;
+  }
+  
+  .option-icon {
+    font-size: 2rem;
+    margin-bottom: 0;
+    margin-right: 1rem;
+  }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .signup-container {
@@ -420,4 +574,53 @@
     padding: 1rem 1.5rem;
     font-size: 1rem;
   }
+}
+
+/* Requirements Summary */
+.requirements-summary {
+  background: linear-gradient(135deg, #f8fffe, #e8f5e9);
+  border: 1px solid #c8e6c9;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.requirements-summary h4 {
+  margin: 0 0 0.75rem 0;
+  color: #2e7d32;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.requirements-summary ul {
+  margin: 0 0 0.75rem 0;
+  padding-left: 1.25rem;
+  list-style: none;
+}
+
+.requirements-summary li {
+  margin-bottom: 0.25rem;
+  font-size: 0.9rem;
+  color: #2e7d32;
+  position: relative;
+}
+
+.requirements-summary li::before {
+  content: '✓';
+  position: absolute;
+  left: -1.25rem;
+  color: #4caf50;
+  font-weight: bold;
+}
+
+.optional-note {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #666;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.optional-note strong {
+  color: #2e7d32;
 }

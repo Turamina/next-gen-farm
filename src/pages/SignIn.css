@@ -200,7 +200,128 @@
   margin-bottom: 1rem;
 }
 
-/* Responsive Design */
+/* Account Type Selection Styles */
+.account-type-group {
+  margin-bottom: 1.5rem;
+}
+
+.account-type-group label {
+  font-weight: 600;
+  color: #2e7d32;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.account-type-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.account-type-option {
+  border: 2px solid #e8f5e9;
+  border-radius: 12px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: #fafafa;
+  position: relative;
+  overflow: hidden;
+}
+
+.account-type-option::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 0;
+}
+
+.account-type-option:hover {
+  border-color: #66bb6a;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(56, 142, 60, 0.15);
+}
+
+.account-type-option:hover::before {
+  opacity: 1;
+}
+
+.account-type-option.selected {
+  border-color: #4caf50;
+  background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
+  box-shadow: 0 5px 20px rgba(56, 142, 60, 0.2);
+}
+
+.account-type-option.selected::before {
+  opacity: 1;
+}
+
+.account-type-option input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.option-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.option-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  filter: grayscale(0.3);
+  transition: filter 0.3s ease;
+}
+
+.account-type-option.selected .option-icon,
+.account-type-option:hover .option-icon {
+  filter: grayscale(0);
+}
+
+.option-text h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2e7d32;
+}
+
+.account-type-option.selected .option-text h3 {
+  color: #1b5e20;
+}
+
+@media (max-width: 640px) {
+  .account-type-options {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  
+  .account-type-option {
+    padding: 0.75rem;
+  }
+  
+  .option-content {
+    flex-direction: row;
+    text-align: left;
+  }
+  
+  .option-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0;
+    margin-right: 0.75rem;
+  }
+}
+
 @media (max-width: 768px) {
   .signin-container {
     padding: 1rem;

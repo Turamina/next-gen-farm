@@ -4,7 +4,7 @@ const dummyProducts = [
     name: 'Fresh Milk',
     price: 45.99,
     image: require('../assets/milk.jpg'),
-    description: 'Fresh farm milk, directly from our cattle',
+    description: 'Fresh farm milk, directly from our dairy farm',
     stock: 50
   },
   {

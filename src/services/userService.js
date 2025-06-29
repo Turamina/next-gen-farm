@@ -32,24 +32,13 @@ export const userService = {
         lastName: userData.lastName || '',
         displayName: userData.displayName || `${userData.firstName} ${userData.lastName}`,
         phoneNumber: userData.phoneNumber || '',
+        accountType: userData.accountType || 'customer', // Add account type
         
-        // Farm Information
+        // Farm Information (for legacy compatibility)
         farmName: userData.farmName || '',
         farmAddress: userData.farmAddress || '',
         farmType: userData.farmType || '',
         farmSize: userData.farmSize || '',
-        
-        // Cattle Information
-        cattle: {
-          totalCount: 0,
-          types: {
-            dairy: 0,
-            beef: 0,
-            other: 0
-          },
-          totalDailyFoodRequirement: 0,
-          lastUpdated: null
-        },
         
         // Profile Details
         bio: userData.bio || '',
@@ -187,49 +176,12 @@ export const userService = {
       console.error('Error deleting user account:', error);
       throw error;
     }
-  },
-
-  // Export cattle management service
-  cattleService: {
-    // Update cattle statistics in user profile
-    updateCattleStats: async (uid) => {
-      try {
-        const { adminService } = await import('./adminService');
-        
-        // Get all cattle for the user
-        const cattle = await adminService.getUserCattle(uid);
-        
-        // Calculate totals
-        const stats = {
-          totalCount: cattle.length,
-          types: {
-            dairy: cattle.filter(c => c.type?.toLowerCase() === 'dairy').length,
-            beef: cattle.filter(c => c.type?.toLowerCase() === 'beef').length,
-            other: cattle.filter(c => !['dairy', 'beef'].includes(c.type?.toLowerCase())).length
-          },
-          totalDailyFoodRequirement: await adminService.getTotalFoodRequirement(uid),
-          lastUpdated: serverTimestamp()
-        };
-
-        // Update user profile
-        const userRef = doc(db, 'users', uid);
-        await updateDoc(userRef, {
-          'cattle': stats,
-          updatedAt: serverTimestamp()
-        });
-
-        return stats;
-      } catch (error) {
-        console.error('Error updating cattle statistics:', error);
-        throw error;
-      }
-    }
   }
 };
 
 // Order Management Service
 export const orderService = {
-    // Create a new order
+  // Create a new order
   createOrder: async (uid, orderData) => {
     try {
       console.log('Creating order for user:', uid);

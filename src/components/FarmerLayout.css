@@ -1,0 +1,30 @@
+.farmer-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.farmer-main-content {
+  flex: 1;
+  background: #f8f9fa;
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+/* Override any conflicting styles */
+.farmer-main-content .container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+@media (max-width: 768px) {
+  .farmer-main-content {
+    padding-top: 15px;
+    padding-bottom: 15px;
+  }
+  
+  .farmer-main-content .container {
+    padding: 0 15px;
+  }
+}
