@@ -146,6 +146,14 @@ const CattleManagement = () => {
     try {
       setLoading(true);
       
+      // Debug: Log the form data before sending
+      console.log('=== FORM DATA DEBUG ===');
+      console.log('Full cattle form:', cattleForm);
+      console.log('Production data:', cattleForm.production);
+      console.log('Daily output value:', cattleForm.production.dailyOutput);
+      console.log('Daily output type:', typeof cattleForm.production.dailyOutput);
+      console.log('=== END FORM DEBUG ===');
+      
       // Add the cattle
       const newCattle = await cattleService.addCattle(currentUser.uid, cattleForm);
       console.log('New cattle added:', newCattle);
@@ -257,6 +265,38 @@ const CattleManagement = () => {
     }
   };
 
+  // Manual refresh for debugging
+  const refreshData = async () => {
+    console.log('Manual refresh triggered');
+    await loadCattleData();
+  };
+
+  // Debug function - can be called from browser console
+  window.debugCattleData = async () => {
+    try {
+      const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      if (!currentUser.uid) {
+        console.log('No user found');
+        return;
+      }
+      
+      const cattleData = await cattleService.getFarmerCattle(currentUser.uid);
+      console.log('=== MANUAL CATTLE DEBUG ===');
+      console.log('Raw cattle data from database:', cattleData);
+      cattleData.forEach((cattle, index) => {
+        console.log(`Cattle ${index + 1}:`, {
+          name: cattle.name,
+          production: cattle.production,
+          dailyOutput: cattle.production?.dailyOutput,
+          type: typeof cattle.production?.dailyOutput
+        });
+      });
+      console.log('=== END MANUAL DEBUG ===');
+    } catch (error) {
+      console.error('Debug error:', error);
+    }
+  };
+
   if (loading && cattle.length === 0) {
     return <LoadingSpinner />;
   }
@@ -317,7 +357,24 @@ const CattleManagement = () => {
                 <div className="stat-card">
                   <h3>Daily Milk Production</h3>
                   <div className="stat-number">{cattleStats.totalProduction?.dailyMilk || 0} L</div>
+                  <small style={{color: '#666', fontSize: '11px'}}>
+                    From {cattle.filter(c => c.production?.type === 'milk' && c.production?.dailyOutput > 0).length} milk-producing cattle
+                  </small>
+                  <div style={{marginTop: '5px'}}>
+                    <button onClick={refreshData} style={{fontSize: '10px', padding: '2px 6px'}}>
+                      🔄 Debug Refresh
+                    </button>
+                  </div>
                 </div>
+                {cattleStats.totalProduction?.dailyEggs > 0 && (
+                  <div className="stat-card">
+                    <h3>Daily Egg Production</h3>
+                    <div className="stat-number">{cattleStats.totalProduction?.dailyEggs || 0} pieces</div>
+                    <small style={{color: '#666', fontSize: '11px'}}>
+                      From {cattle.filter(c => c.production?.type === 'eggs' && c.production?.dailyOutput > 0).length} egg-producing animals
+                    </small>
+                  </div>
+                )}
                 <div className="stat-card">
                   <h3>Daily Feed Required</h3>
                   <div className="stat-number">{feedingSuggestions?.totalDailyFeed || 0} kg</div>
@@ -389,8 +446,11 @@ const CattleManagement = () => {
                     <p><strong>Type:</strong> {animal.type}</p>
                     <p><strong>Age:</strong> {animal.age} months</p>
                     <p><strong>Weight:</strong> {animal.weight} kg</p>
-                    {animal.production?.dailyOutput > 0 && (
+                    {animal.production?.type !== 'none' && animal.production?.dailyOutput > 0 && (
                       <p><strong>Daily {animal.production.type}:</strong> {animal.production.dailyOutput} {animal.production.unit}</p>
+                    )}
+                    {animal.production?.type === 'milk' && (!animal.production?.dailyOutput || animal.production?.dailyOutput <= 0) && (
+                      <p style={{color: '#ff6b6b'}}><strong>Production:</strong> Not set or 0</p>
                     )}
                   </div>
 
@@ -649,7 +709,18 @@ const CattleManagement = () => {
                   />
                   <select
                     value={cattleForm.type}
-                    onChange={(e) => setCattleForm({...cattleForm, type: e.target.value})}
+                    onChange={(e) => {
+                      const newType = e.target.value;
+                      setCattleForm({
+                        ...cattleForm, 
+                        type: newType,
+                        // Auto-set production type based on cattle type
+                        production: {
+                          ...cattleForm.production,
+                          type: newType === 'dairy' ? 'milk' : cattleForm.production.type
+                        }
+                      });
+                    }}
                   >
                     <option value="dairy">Dairy</option>
                     <option value="beef">Beef</option>
@@ -697,7 +768,8 @@ const CattleManagement = () => {
                   </select>
                   <input
                     type="number"
-                    placeholder="Daily Output"
+                    step="0.1"
+                    placeholder={`Daily ${cattleForm.production.type === 'milk' ? 'Milk (Liters)' : cattleForm.production.type === 'eggs' ? 'Eggs (Pieces)' : 'Output'}`}
                     value={cattleForm.production.dailyOutput}
                     onChange={(e) => setCattleForm({
                       ...cattleForm, 
@@ -705,6 +777,16 @@ const CattleManagement = () => {
                     })}
                   />
                 </div>
+                {cattleForm.production.type === 'milk' && (
+                  <small style={{color: '#666', marginTop: '5px', display: 'block'}}>
+                    💡 Enter the average daily milk production in liters (e.g., 15.5)
+                  </small>
+                )}
+                {cattleForm.production.type === 'eggs' && (
+                  <small style={{color: '#666', marginTop: '5px', display: 'block'}}>
+                    💡 Enter the average daily egg production in pieces (e.g., 12)
+                  </small>
+                )}
               </div>
 
               <div className="form-section">

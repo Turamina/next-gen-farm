@@ -35,7 +35,9 @@ export const cattleService = {
         // Production data
         production: {
           type: cattleData.production?.type || 'none', // milk, eggs, meat, none
-          dailyOutput: cattleData.production?.dailyOutput || 0,
+          dailyOutput: cattleData.production?.dailyOutput && cattleData.production.dailyOutput !== '' 
+            ? parseFloat(cattleData.production.dailyOutput) 
+            : 0,
           unit: cattleData.production?.unit || 'liters', // liters, pieces, kg
           lastRecorded: cattleData.production?.lastRecorded || null
         },
@@ -164,7 +166,7 @@ export const cattleService = {
         cattleId,
         date: productionData.date || new Date().toISOString().split('T')[0],
         type: productionData.type, // milk, eggs, etc.
-        amount: productionData.amount,
+        amount: parseFloat(productionData.amount) || 0,
         unit: productionData.unit,
         quality: productionData.quality || 'good',
         notes: productionData.notes || '',
@@ -175,9 +177,9 @@ export const cattleService = {
       const docRef = await addDoc(productionCollection, record);
       
       // Update cattle's last production data
-      await this.updateCattle(cattleId, {
+      await cattleService.updateCattle(cattleId, {
         'production.lastRecorded': serverTimestamp(),
-        'production.dailyOutput': productionData.amount
+        'production.dailyOutput': parseFloat(productionData.amount) || 0
       });
       
       console.log('Production recorded with ID:', docRef.id);
@@ -397,7 +399,41 @@ export const cattleService = {
   // Get cattle statistics for dashboard
   getCattleStats: async (farmerId) => {
     try {
-      const cattle = await this.getFarmerCattle(farmerId);
+      const cattle = await cattleService.getFarmerCattle(farmerId);
+      
+      // Debug: Log all cattle data
+      console.log('=== DEBUGGING CATTLE STATS ===');
+      console.log('Total cattle found:', cattle.length);
+      
+      cattle.forEach((c, index) => {
+        console.log(`Cattle ${index + 1}:`, {
+          name: c.name,
+          tagNumber: c.tagNumber,
+          type: c.type,
+          production: c.production,
+          productionType: c.production?.type,
+          dailyOutput: c.production?.dailyOutput,
+          dailyOutputType: typeof c.production?.dailyOutput
+        });
+      });
+      
+      const milkCattle = cattle.filter(c => {
+        const hasProduction = c.production && c.production.type === 'milk';
+        const hasOutput = c.production && c.production.dailyOutput && c.production.dailyOutput > 0;
+        console.log(`Cattle ${c.tagNumber}: hasProduction=${hasProduction}, hasOutput=${hasOutput}, dailyOutput=${c.production?.dailyOutput}`);
+        return hasProduction && hasOutput;
+      });
+      
+      console.log('Milk-producing cattle count:', milkCattle.length);
+      
+      const totalMilk = milkCattle.reduce((sum, c) => {
+        const output = parseFloat(c.production.dailyOutput) || 0;
+        console.log(`Adding milk from ${c.name || c.tagNumber}: ${output} (type: ${typeof output})`);
+        return sum + output;
+      }, 0);
+      
+      console.log('Total milk calculated:', totalMilk);
+      console.log('=== END DEBUGGING ===');
       
       const stats = {
         totalCattle: cattle.length,
@@ -416,14 +452,12 @@ export const cattleService = {
           adult: cattle.filter(c => c.age > 24).length
         },
         totalProduction: {
-          dailyMilk: cattle
-            .filter(c => c.production.type === 'milk')
-            .reduce((sum, c) => sum + (c.production.dailyOutput || 0), 0),
+          dailyMilk: totalMilk,
           dailyEggs: cattle
-            .filter(c => c.production.type === 'eggs')
-            .reduce((sum, c) => sum + (c.production.dailyOutput || 0), 0)
+            .filter(c => c.production && c.production.type === 'eggs' && c.production.dailyOutput > 0)
+            .reduce((sum, c) => sum + (parseFloat(c.production.dailyOutput) || 0), 0)
         },
-        feedingRequirements: this.calculateFeedingRequirements(cattle)
+        feedingRequirements: cattleService.calculateFeedingRequirements(cattle)
       };
       
       return stats;
