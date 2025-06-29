@@ -23,16 +23,32 @@ app.post('/api/initiate-payment', async (req, res) => {
         fail_url: `${frontendBaseUrl}/payment-failed`,
         cancel_url: `${frontendBaseUrl}/payment-canceled`,
         ipn_url: 'http://localhost:3030/ipn',
+        // Disable EMI to prevent API errors
+        emi_option: 0,
+        emi_max_inst_option: 0,
+        emi_selected_inst: 0,
+        // Add required fields to prevent API errors
+        shipping_method: req.body.shipping_method || 'Courier',
+        product_name: req.body.product_name || 'Online Order',
+        product_category: req.body.product_category || 'General',
+        product_profile: req.body.product_profile || 'general'
     };
+    
+    console.log('Initiating payment with data:', JSON.stringify(orderData, null, 2));
+    
     const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
     try {
         const apiResponse = await sslcz.init(orderData);
+        console.log('SSL Commerz response:', apiResponse);
+        
         if (apiResponse.GatewayPageURL) {
             res.json({ success: true, GatewayPageURL: apiResponse.GatewayPageURL });
         } else {
+            console.error('No GatewayPageURL in response:', apiResponse);
             res.status(400).json({ success: false, error: apiResponse.failedreason || 'No GatewayPageURL returned' });
         }
     } catch (err) {
+        console.error('SSL Commerz error:', err);
         res.status(500).json({ success: false, error: err.message });
     }
 });

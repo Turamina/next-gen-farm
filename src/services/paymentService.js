@@ -10,14 +10,38 @@
  */
 export const initiateSslCommerzPayment = async (orderData) => {
   try {
+    // Ensure EMI is disabled and required fields are present
+    const sanitizedOrderData = {
+      ...orderData,
+      // Disable EMI to prevent API errors
+      emi_option: 0,
+      emi_max_inst_option: 0,
+      emi_selected_inst: 0,
+      // Ensure required fields are present
+      shipping_method: orderData.shipping_method || 'Courier',
+      product_name: orderData.product_name || 'Online Order',
+      product_category: orderData.product_category || 'General',
+      product_profile: orderData.product_profile || 'general'
+    };
+    
+    console.log('Sending payment data to backend:', sanitizedOrderData);
+    
     // Call your backend API instead of SSLCommerz directly
     const response = await fetch('http://localhost:3030/api/initiate-payment', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(orderData)
+      body: JSON.stringify(sanitizedOrderData)
     });
-    if (!response.ok) throw new Error('Failed to initiate payment');
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Backend response error:', response.status, errorText);
+      throw new Error(`Failed to initiate payment: ${response.status} ${errorText}`);
+    }
+    
     const data = await response.json();
+    console.log('Backend response:', data);
+    
     if (data.success && data.GatewayPageURL) {
       window.location.href = data.GatewayPageURL;
       return { success: true, gatewayPageURL: data.GatewayPageURL };
@@ -27,6 +51,7 @@ export const initiateSslCommerzPayment = async (orderData) => {
       throw new Error(data.error || 'No GatewayPageURL');
     }
   } catch (error) {
+    console.error('Payment initiation error:', error);
     return { success: false, error: error.message };
   }
 };
@@ -67,13 +92,24 @@ const directGatewayRedirect = (orderData) => {
 
     addField('store_id', storeId);
     addField('store_passwd', storePassword);
+    
+    // Disable EMI to prevent API errors
+    addField('emi_option', '0');
+    addField('emi_max_inst_option', '0');
+    addField('emi_selected_inst', '0');
 
     // Add all order data fields
     Object.entries(orderData).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
+      if (value !== undefined && value !== null && key !== 'store_id' && key !== 'store_passwd') {
         addField(key, value);
       }
     });
+    
+    // Ensure required fields are present
+    if (!orderData.shipping_method) addField('shipping_method', 'Courier');
+    if (!orderData.product_name) addField('product_name', 'Online Order');
+    if (!orderData.product_category) addField('product_category', 'General');
+    if (!orderData.product_profile) addField('product_profile', 'general');
 
     // Store transaction ID for verification after payment
     localStorage.setItem('pendingTransactionId', orderData.tran_id);

@@ -4,6 +4,19 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
+// Import advanced SSL Commerz EMI blocker first
+import './utils/sslcommerzEMIBlocker';
+// Import general error suppression
+import './utils/errorSuppression';
+
+// Enable production mode if not in development
+if (process.env.NODE_ENV === 'production') {
+  // React automatically optimizes in production builds
+  console.log('Application running in production mode');
+} else {
+  console.log('Application running in development mode');
+}
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
