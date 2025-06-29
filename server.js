@@ -54,11 +54,11 @@ app.get('/', (req, res) => {
     res.send('SSLCommerz backend is running.');
 });
 
-// Serve React build for production
-app.use(express.static(path.join(__dirname, 'build')));
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'build', 'index.html'));
-});
+// Serve React build for production (commented out to avoid conflicts in development)
+// app.use(express.static(path.join(__dirname, 'build')));
+// app.get('*', (req, res) => {
+//     res.sendFile(path.join(__dirname, 'build', 'index.html'));
+// });
 
 // --- SSLCommerz DEMO/TEST ROUTE for direct gateway testing ---
 app.get('/test-ssl-gateway', (req, res) => {

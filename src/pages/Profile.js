@@ -17,8 +17,6 @@ const Profile = () => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [orders, setOrders] = useState([]);
-  const [cattle, setCattle] = useState([]);
-  const [cattleLoading, setCattleLoading] = useState(false);
   
   // Profile form data
   const [profileData, setProfileData] = useState({
@@ -95,15 +93,6 @@ const Profile = () => {
           setOrders(userOrders);
         } catch (error) {
           console.error('Error loading orders:', error);
-        }
-        
-        // Load user cattle
-        try {
-          const { adminService } = await import('../services/adminService');
-          const userCattle = await adminService.getUserCattle(currentUser.uid);
-          setCattle(userCattle);
-        } catch (error) {
-          console.error('Error loading cattle:', error);
         }
       }
     };
@@ -290,141 +279,6 @@ const Profile = () => {
     }
   }, [activeTab, currentUser]);
 
-  // Cattle data handling
-  const [cattleForm, setCattleForm] = useState({
-    type: 'dairy',
-    weight: '',
-    age: '',
-    description: ''
-  });
-
-  const handleCattleFormChange = (e) => {
-    const { name, value } = e.target;
-    setCattleForm(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  // Refresh cattle data
-  const refreshCattle = async () => {
-    if (currentUser) {
-      setCattleLoading(true);
-      try {
-        const { adminService } = await import('../services/adminService');
-        const userCattle = await adminService.getUserCattle(currentUser.uid);
-        setCattle(userCattle);
-      } catch (error) {
-        console.error('Error refreshing cattle:', error);
-      } finally {
-        setCattleLoading(false);
-      }
-    }
-  };
-
-  // Handle cattle form submission
-  const handleCattleSubmit = async (e) => {
-    e.preventDefault();
-    
-    // Validate form
-    if (!cattleForm.type || !cattleForm.weight || !cattleForm.age) {
-      setError('Please fill all required fields for cattle');
-      return;
-    }
-
-    if (parseFloat(cattleForm.weight) <= 0 || parseFloat(cattleForm.age) < 0) {
-      setError('Please enter valid weight and age values');
-      return;
-    }
-
-    setCattleLoading(true);
-    setError('');
-    setMessage('');
-
-    try {
-      const { adminService } = await import('../services/adminService');
-      
-      const newCattle = {
-        type: cattleForm.type.trim(),
-        weight: parseFloat(cattleForm.weight),
-        age: parseFloat(cattleForm.age),
-        description: cattleForm.description.trim() || '',
-        createdAt: new Date().toISOString()
-      };
-
-      await adminService.addCattle(currentUser.uid, newCattle);
-      
-      // Reset form and reload cattle
-      setCattleForm({
-        type: 'dairy',
-        weight: '',
-        age: '',
-        description: ''
-      });
-      
-      await refreshCattle();
-      
-      setMessage('Cattle added successfully!');
-      setTimeout(() => setMessage(''), 3000);
-    } catch (error) {
-      console.error('Error adding cattle:', error);
-      setError('Failed to add cattle. Please try again.');
-    } finally {
-      setCattleLoading(false);
-    }
-  };
-
-  // Handle cattle deletion
-  const handleDeleteCattle = async (cattleId) => {
-    if (!window.confirm('Are you sure you want to delete this cattle record?')) {
-      return;
-    }
-
-    setCattleLoading(true);
-    setError('');
-    setMessage('');
-
-    try {
-      const { adminService } = await import('../services/adminService');
-      await adminService.deleteCattle(cattleId);
-      
-      await refreshCattle();
-      
-      setMessage('Cattle deleted successfully!');
-      setTimeout(() => setMessage(''), 3000);
-    } catch (error) {
-      console.error('Error deleting cattle:', error);
-      setError('Failed to delete cattle. Please try again.');
-    } finally {
-      setCattleLoading(false);
-    }
-  };
-
-  // Format date for display
-  const formatDate = (timestamp) => {
-    if (!timestamp) return 'N/A';
-    
-    let date;
-    try {
-      if (timestamp.toDate) {
-        // Firebase Timestamp
-        date = timestamp.toDate();
-      } else if (typeof timestamp === 'string') {
-        // ISO string
-        date = new Date(timestamp);
-      } else if (timestamp instanceof Date) {
-        // JavaScript Date object
-        date = timestamp;
-      } else {
-        return 'Invalid date';
-      }
-      
-      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return 'Error formatting date';
-    }
-  };
   // SSL Commerz Payment Gateway Integration
   const initiateSslCommerzPayment = async () => {
     if (cartItems.length === 0) {
@@ -615,12 +469,6 @@ const Profile = () => {
           onClick={() => setActiveTab('cart')}
         >
           Shopping Cart ({cartItems.length})
-        </button>
-        <button 
-          className={`tab-button ${activeTab === 'cattle' ? 'active' : ''}`}
-          onClick={() => setActiveTab('cattle')}
-        >
-          Cattle Management
         </button>
         <button 
           className={`tab-button ${activeTab === 'preferences' ? 'active' : ''}`}
@@ -1090,151 +938,6 @@ const Profile = () => {
                 {isLoading ? 'Saving...' : 'Save Preferences'}
               </button>
             </form>
-          </div>
-        )}
-
-        {/* Cattle Management Tab */}
-        {activeTab === 'cattle' && (
-          <div className="tab-content">
-            <h2>Cattle Management</h2>
-            
-            <div className="section-intro">
-              <p>Manage your farm's cattle and track their daily food requirements.</p>
-              {userProfile?.cattle && (
-                <div className="cattle-stats">
-                  <div className="stat-item">
-                    <span className="stat-label">Total Cattle:</span>
-                    <span className="stat-value">{userProfile.cattle.totalCount}</span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-label">Daily Food Needed:</span>
-                    <span className="stat-value">{userProfile.cattle.totalDailyFoodRequirement} kg</span>
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            <div className="cattle-form-container">
-              <h3>Add New Cattle</h3>
-              <form onSubmit={handleCattleSubmit} className="cattle-form">
-                <div className="form-row">
-                  <div className="form-group">
-                    <label htmlFor="type">Cattle Type</label>
-                    <select
-                      id="type"
-                      name="type"
-                      value={cattleForm.type}
-                      onChange={(e) => setCattleForm({...cattleForm, type: e.target.value})}
-                    >
-                      <option value="dairy">Dairy</option>
-                      <option value="beef">Beef</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="weight">Weight (kg)</label>
-                    <input
-                      type="number"
-                      id="weight"
-                      name="weight"
-                      value={cattleForm.weight}
-                      onChange={(e) => setCattleForm({...cattleForm, weight: e.target.value})}
-                      placeholder="Enter weight in kg"
-                      min="0"
-                      step="0.1"
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label htmlFor="age">Age (years)</label>
-                    <input
-                      type="number"
-                      id="age"
-                      name="age"
-                      value={cattleForm.age}
-                      onChange={(e) => setCattleForm({...cattleForm, age: e.target.value})}
-                      placeholder="Enter age in years"
-                      min="0"
-                      step="0.1"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="description">Description</label>
-                    <input
-                      type="text"
-                      id="description"
-                      name="description"
-                      value={cattleForm.description}
-                      onChange={(e) => setCattleForm({...cattleForm, description: e.target.value})}
-                      placeholder="Enter description (optional)"
-                    />
-                  </div>
-                </div>
-
-                <button type="submit" className="save-btn" disabled={cattleLoading}>
-                  {cattleLoading ? 'Adding...' : 'Add Cattle'}
-                </button>
-              </form>
-            </div>
-
-            <div className="cattle-list-container">
-              <div className="section-header">
-                <h3>Your Cattle</h3>
-                <button onClick={refreshCattle} className="refresh-btn" disabled={cattleLoading}>
-                  {cattleLoading ? 'Refreshing...' : 'Refresh'}
-                </button>
-              </div>
-
-              {cattleLoading ? (
-                <div className="loading-message">Loading cattle data...</div>
-              ) : cattle.length === 0 ? (
-                <div className="empty-message">
-                  <p>You don't have any cattle records yet. Add your first cattle above.</p>
-                </div>
-              ) : (
-                <div className="cattle-grid">
-                  {cattle.map((animal) => (
-                    <div key={animal.id} className="cattle-card">
-                      <div className="cattle-header">
-                        <h4>{animal.type.charAt(0).toUpperCase() + animal.type.slice(1)} Cattle</h4>
-                        <span className="cattle-food-requirement">{animal.dailyFoodRequirement} kg/day</span>
-                      </div>
-                      <div className="cattle-details">
-                        <div className="cattle-detail">
-                          <span className="detail-label">Weight:</span>
-                          <span className="detail-value">{animal.weight} kg</span>
-                        </div>
-                        <div className="cattle-detail">
-                          <span className="detail-label">Age:</span>
-                          <span className="detail-value">{animal.age} years</span>
-                        </div>
-                        {animal.description && (                          <div className="cattle-description">
-                            {animal.description}
-                          </div>
-                        )}
-                        <div className="cattle-detail">
-                          <span className="detail-label">Added:</span>
-                          <span className="detail-value">
-                            {formatDate(animal.createdAt)}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="cattle-actions">
-                        <button
-                          className="delete-btn"
-                          onClick={() => handleDeleteCattle(animal.id)}
-                          disabled={cattleLoading}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
         )}
       </div>
