@@ -96,24 +96,38 @@ export const cattleService = {
       console.log('Fetching cattle for farmer:', farmerId);
       
       const cattleCollection = collection(db, 'cattle');
+      
+      // Use a simple query first to test connectivity
       const q = query(
         cattleCollection,
-        where('farmerId', '==', farmerId),
-        where('status', '==', 'active'),
-        orderBy('createdAt', 'desc')
+        where('farmerId', '==', farmerId)
       );
       
       const querySnapshot = await getDocs(q);
       const cattle = [];
       
       querySnapshot.forEach((doc) => {
-        cattle.push({ id: doc.id, ...doc.data() });
+        const data = doc.data();
+        // Only include active cattle
+        if (data.status === 'active' || !data.status) {
+          cattle.push({ id: doc.id, ...data });
+        }
+      });
+      
+      // Sort manually by creation date
+      cattle.sort((a, b) => {
+        if (a.createdAt && b.createdAt) {
+          return b.createdAt.toDate() - a.createdAt.toDate();
+        }
+        return 0;
       });
       
       console.log('Found cattle:', cattle.length);
       return cattle;
     } catch (error) {
       console.error('Error fetching cattle:', error);
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
       throw error;
     }
   },

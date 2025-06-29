@@ -37,6 +37,9 @@ const FarmerHeader = () => {
           <Link to="/farmer/add-product" className="nav-link">
             Add Product
           </Link>
+          <Link to="/farmer/cattle" className="nav-link">
+            🐄 Cattle Management
+          </Link>
           <Link to="/farmer/orders" className="nav-link">
             Orders
           </Link>

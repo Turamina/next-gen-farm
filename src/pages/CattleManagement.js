@@ -69,18 +69,47 @@ const CattleManagement = () => {
   const loadCattleData = async () => {
     try {
       setLoading(true);
-      const [cattleData, stats] = await Promise.all([
-        cattleService.getFarmerCattle(currentUser.uid),
-        cattleService.getCattleStats(currentUser.uid)
-      ]);
+      setError('');
       
+      console.log('Current user:', currentUser);
+      console.log('User ID:', currentUser?.uid);
+      
+      if (!currentUser?.uid) {
+        setError('User not authenticated');
+        return;
+      }
+
+      console.log('Loading cattle data...');
+      
+      // Try to load cattle first
+      const cattleData = await cattleService.getFarmerCattle(currentUser.uid);
+      console.log('Cattle data loaded:', cattleData);
       setCattle(cattleData);
-      setCattleStats(stats);
-      setFeedingSuggestions(stats.feedingRequirements);
+      
+      // Then try to load stats
+      try {
+        const stats = await cattleService.getCattleStats(currentUser.uid);
+        console.log('Stats loaded:', stats);
+        setCattleStats(stats);
+        setFeedingSuggestions(stats.feedingRequirements);
+      } catch (statsError) {
+        console.error('Error loading stats:', statsError);
+        // Don't fail the whole operation if stats fail
+        setCattleStats({
+          totalCattle: cattleData.length,
+          byType: { dairy: 0, beef: 0, 'dual-purpose': 0 },
+          byGender: { male: 0, female: 0 },
+          byAge: { calves: 0, young: 0, adult: 0 },
+          totalProduction: { dailyMilk: 0, dailyEggs: 0 },
+          feedingRequirements: { totalDailyFeed: 0, totalDailyCost: 0, individualSuggestions: [] }
+        });
+      }
+      
       setError('');
     } catch (err) {
       console.error('Error loading cattle data:', err);
-      setError('Failed to load cattle data');
+      console.error('Error details:', err.message, err.code);
+      setError(`Failed to load cattle data: ${err.message || 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -247,105 +276,127 @@ const CattleManagement = () => {
       </div>
 
       {/* Overview Tab */}
-      {activeTab === 'overview' && cattleStats && (
+      {activeTab === 'overview' && (
         <div className="overview-tab">
-          <div className="stats-grid">
-            <div className="stat-card">
-              <h3>Total Cattle</h3>
-              <div className="stat-number">{cattleStats.totalCattle}</div>
-            </div>
-            <div className="stat-card">
-              <h3>Daily Milk Production</h3>
-              <div className="stat-number">{cattleStats.totalProduction.dailyMilk} L</div>
-            </div>
-            <div className="stat-card">
-              <h3>Daily Feed Required</h3>
-              <div className="stat-number">{feedingSuggestions?.totalDailyFeed} kg</div>
-            </div>
-            <div className="stat-card">
-              <h3>Daily Feed Cost</h3>
-              <div className="stat-number">৳{feedingSuggestions?.totalDailyCost}</div>
-            </div>
-          </div>
-
-          <div className="cattle-breakdown">
-            <div className="breakdown-section">
-              <h3>By Type</h3>
-              <div className="breakdown-items">
-                <div className="breakdown-item">
-                  <span>Dairy: {cattleStats.byType.dairy}</span>
+          {cattleStats ? (
+            <>
+              <div className="stats-grid">
+                <div className="stat-card">
+                  <h3>Total Cattle</h3>
+                  <div className="stat-number">{cattleStats.totalCattle}</div>
                 </div>
-                <div className="breakdown-item">
-                  <span>Beef: {cattleStats.byType.beef}</span>
+                <div className="stat-card">
+                  <h3>Daily Milk Production</h3>
+                  <div className="stat-number">{cattleStats.totalProduction?.dailyMilk || 0} L</div>
                 </div>
-                <div className="breakdown-item">
-                  <span>Dual-Purpose: {cattleStats.byType['dual-purpose']}</span>
+                <div className="stat-card">
+                  <h3>Daily Feed Required</h3>
+                  <div className="stat-number">{feedingSuggestions?.totalDailyFeed || 0} kg</div>
+                </div>
+                <div className="stat-card">
+                  <h3>Daily Feed Cost</h3>
+                  <div className="stat-number">৳{feedingSuggestions?.totalDailyCost || 0}</div>
                 </div>
               </div>
-            </div>
 
-            <div className="breakdown-section">
-              <h3>By Age Group</h3>
-              <div className="breakdown-items">
-                <div className="breakdown-item">
-                  <span>Calves (0-12 months): {cattleStats.byAge.calves}</span>
+              <div className="cattle-breakdown">
+                <div className="breakdown-section">
+                  <h3>By Type</h3>
+                  <div className="breakdown-items">
+                    <div className="breakdown-item">
+                      <span>Dairy: {cattleStats.byType?.dairy || 0}</span>
+                    </div>
+                    <div className="breakdown-item">
+                      <span>Beef: {cattleStats.byType?.beef || 0}</span>
+                    </div>
+                    <div className="breakdown-item">
+                      <span>Dual-Purpose: {cattleStats.byType?.['dual-purpose'] || 0}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="breakdown-item">
-                  <span>Young (12-24 months): {cattleStats.byAge.young}</span>
-                </div>
-                <div className="breakdown-item">
-                  <span>Adult (24+ months): {cattleStats.byAge.adult}</span>
+
+                <div className="breakdown-section">
+                  <h3>By Age Group</h3>
+                  <div className="breakdown-items">
+                    <div className="breakdown-item">
+                      <span>Calves (0-12 months): {cattleStats.byAge?.calves || 0}</span>
+                    </div>
+                    <div className="breakdown-item">
+                      <span>Young (12-24 months): {cattleStats.byAge?.young || 0}</span>
+                    </div>
+                    <div className="breakdown-item">
+                      <span>Adult (24+ months): {cattleStats.byAge?.adult || 0}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
+            </>
+          ) : (
+            <div className="no-data">
+              <h3>📊 Loading Statistics...</h3>
+              <p>Add some cattle to see detailed analytics and feeding recommendations.</p>
             </div>
-          </div>
+          )}
         </div>
       )}
 
       {/* Cattle List Tab */}
       {activeTab === 'cattle-list' && (
         <div className="cattle-list-tab">
-          <div className="cattle-grid">
-            {cattle.map((animal) => (
-              <div key={animal.id} className="cattle-card">
-                <div className="cattle-card-header">
-                  <h3>{animal.name || `${animal.breed} #${animal.tagNumber}`}</h3>
-                  <span className={`status-badge ${animal.healthStatus}`}>
-                    {animal.healthStatus}
-                  </span>
-                </div>
-                
-                <div className="cattle-info">
-                  <p><strong>Tag:</strong> {animal.tagNumber}</p>
-                  <p><strong>Breed:</strong> {animal.breed}</p>
-                  <p><strong>Type:</strong> {animal.type}</p>
-                  <p><strong>Age:</strong> {animal.age} months</p>
-                  <p><strong>Weight:</strong> {animal.weight} kg</p>
-                  {animal.production?.dailyOutput > 0 && (
-                    <p><strong>Daily {animal.production.type}:</strong> {animal.production.dailyOutput} {animal.production.unit}</p>
-                  )}
-                </div>
+          {cattle.length > 0 ? (
+            <div className="cattle-grid">
+              {cattle.map((animal) => (
+                <div key={animal.id} className="cattle-card">
+                  <div className="cattle-card-header">
+                    <h3>{animal.name || `${animal.breed} #${animal.tagNumber}`}</h3>
+                    <span className={`status-badge ${animal.healthStatus}`}>
+                      {animal.healthStatus}
+                    </span>
+                  </div>
+                  
+                  <div className="cattle-info">
+                    <p><strong>Tag:</strong> {animal.tagNumber}</p>
+                    <p><strong>Breed:</strong> {animal.breed}</p>
+                    <p><strong>Type:</strong> {animal.type}</p>
+                    <p><strong>Age:</strong> {animal.age} months</p>
+                    <p><strong>Weight:</strong> {animal.weight} kg</p>
+                    {animal.production?.dailyOutput > 0 && (
+                      <p><strong>Daily {animal.production.type}:</strong> {animal.production.dailyOutput} {animal.production.unit}</p>
+                    )}
+                  </div>
 
-                <div className="cattle-actions">
-                  <button 
-                    className="btn-secondary"
-                    onClick={() => {
-                      setSelectedCattle(animal);
-                      loadProductionRecords(animal.id);
-                    }}
-                  >
-                    View Details
-                  </button>
-                  <button 
-                    className="btn-danger"
-                    onClick={() => handleDeleteCattle(animal.id)}
-                  >
-                    Remove
-                  </button>
+                  <div className="cattle-actions">
+                    <button 
+                      className="btn-secondary"
+                      onClick={() => {
+                        setSelectedCattle(animal);
+                        loadProductionRecords(animal.id);
+                      }}
+                    >
+                      View Details
+                    </button>
+                    <button 
+                      className="btn-danger"
+                      onClick={() => handleDeleteCattle(animal.id)}
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="no-data">
+              <h3>🐄 No Cattle Added Yet</h3>
+              <p>Start building your herd by adding your first cattle.</p>
+              <button 
+                className="btn-primary"
+                onClick={() => setShowAddForm(true)}
+              >
+                + Add Your First Cattle
+              </button>
+            </div>
+          )}
         </div>
       )}
 
