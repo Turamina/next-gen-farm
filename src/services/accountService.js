@@ -177,26 +177,40 @@ export const accountService = {
     }
   },
 
-  // Get User Profile - Checks both collections to determine account type
+  // Get User Profile - Checks all collections to determine account type
   getUserProfile: async (uid) => {
     try {
-      console.log('🔍 Searching for user profile in both collections for UID:', uid);
+      console.log('🔍 Searching for user profile in all collections for UID:', uid);
       
-      // First check farmers collection
+      // First check if user is an admin in users collection
+      try {
+        const adminDoc = await getDoc(doc(db, 'users', uid));
+        if (adminDoc.exists()) {
+          const adminData = adminDoc.data();
+          if (adminData.isAdmin) {
+            console.log('✅ Found admin profile');
+            return { ...adminData, accountType: 'admin' };
+          }
+        }
+      } catch (adminError) {
+        console.log('ℹ️ Not an admin user (or error checking):', adminError.message);
+      }
+      
+      // Then check farmers collection
       const farmerProfile = await accountService.getFarmerProfile(uid);
       if (farmerProfile) {
         console.log('✅ Found farmer profile');
         return { ...farmerProfile, accountType: 'farmer' };
       }
       
-      // Then check customers collection
+      // Finally check customers collection
       const customerProfile = await accountService.getCustomerProfile(uid);
       if (customerProfile) {
         console.log('✅ Found customer profile');
         return { ...customerProfile, accountType: 'customer' };
       }
       
-      console.log('❌ No profile found in either collection');
+      console.log('❌ No profile found in any collection');
       return null;
       
     } catch (error) {
@@ -267,7 +281,16 @@ export const accountService = {
   updateLastLogin: async (uid, accountType) => {
     try {
       console.log('⏰ Updating last login for UID:', uid, 'Type:', accountType);
-      const collection = accountType === 'farmer' ? 'farmers' : 'customers';
+      
+      let collection;
+      if (accountType === 'admin') {
+        collection = 'users';
+      } else if (accountType === 'farmer') {
+        collection = 'farmers';
+      } else {
+        collection = 'customers';
+      }
+      
       const userRef = doc(db, collection, uid);
       await updateDoc(userRef, {
         lastLoginAt: serverTimestamp()

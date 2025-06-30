@@ -67,22 +67,26 @@ const SignIn = () => {
       const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
       console.log('User signed in successfully:', userCredential.user.email);
       
-      // Check the appropriate database based on account type
+      // Get user profile from any collection (admin, farmer, or customer)
       let userProfile = null;
       
-      if (formData.accountType === 'farmer') {
-        console.log('🔍 Looking for farmer profile in farmers collection...');
-        userProfile = await accountService.getFarmerProfile(userCredential.user.uid);
-        if (!userProfile) {
-          throw new Error('Farmer profile not found in farmers collection. Please check your account type or contact support.');
-        }
-      } else {
-        console.log('🔍 Looking for customer profile in customers collection...');
-        userProfile = await accountService.getCustomerProfile(userCredential.user.uid);
-        if (!userProfile) {
-          throw new Error('Customer profile not found in customers collection. Please check your account type or contact support.');
+      console.log('🔍 Looking for user profile in all collections...');
+      userProfile = await accountService.getUserProfile(userCredential.user.uid);
+      
+      if (!userProfile) {
+        throw new Error(`No profile found for this account. Please check your account type or contact support.`);
+      }
+      
+      console.log(`✅ Found ${userProfile.accountType} profile for user`);
+      
+      // For non-admin users, verify they selected the correct account type
+      if (userProfile.accountType !== 'admin') {
+        if (formData.accountType !== userProfile.accountType) {
+          throw new Error(`Account type mismatch. This is a ${userProfile.accountType} account, but you selected ${formData.accountType}. Please select the correct account type.`);
         }
       }
+      
+      // Admin accounts can sign in with any account type selected
 
       // Check if email verification is enabled for this user
       const emailVerificationEnabled = await userService.getEmailVerificationSetting(userCredential.user.uid);

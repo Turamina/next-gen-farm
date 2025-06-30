@@ -23,11 +23,13 @@ import FarmerProducts from './pages/FarmerProducts';
 import FarmerOrders from './pages/FarmerOrders';
 import AddProduct from './pages/AddProduct';
 import CattleManagement from './pages/CattleManagement';
+import AdminSetup from './pages/AdminSetup';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
 // Import admin account utilities for console access
 import './utils/createAdminAccount';
+import './utils/adminReset';
 
 // Add debug functions for console testing
 window.debugProducts = async function() {
@@ -465,6 +467,15 @@ function App() {
                     <Settings />
                   </FarmerLayout>
                 </ProtectedRoute>
+              } />
+              
+              {/* Admin Setup Route without Header/Footer */}
+              <Route path="/admin-setup" element={
+                <>
+                  <main className="app-main-content">
+                    <AdminSetup />
+                  </main>
+                </>
               } />
             </Routes>
           </div>

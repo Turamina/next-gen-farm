@@ -5,14 +5,13 @@ import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 // Your web app's Firebase configuration
-// NOTE: These are placeholder values - replace with your actual Firebase project configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyAKWkMVYl4v-RZOFaPmCjb1f0mdB9TKKWY", // This needs to be your real API key
-  authDomain: "next-gen-farm.firebaseapp.com", // This should match your project ID
-  projectId: "next-gen-farm", // This should be your actual project ID
-  storageBucket: "next-gen-farm.appspot.com", // This should match your project ID
-  messagingSenderId: "123456789012", // REPLACE: This needs to be your real sender ID
-  appId: "1:123456789012:web:abcdef123456789012345678" // REPLACE: This needs to be your real app ID
+  apiKey: "AIzaSyAKWkMVYl4v-RZOFaPmCjb1f0mdB9TKKWY",
+  authDomain: "next-gen-farm.firebaseapp.com",
+  projectId: "next-gen-farm",
+  storageBucket: "next-gen-farm.appspot.com",
+  messagingSenderId: "565479424733",
+  appId: "1:565479424733:web:8a9b7c6d5e4f3a2b1c0d9e"
 };
 
 // Log configuration for debugging

@@ -8,6 +8,12 @@ import reportWebVitals from './reportWebVitals';
 import './utils/sslcommerzEMIBlocker';
 // Import general error suppression
 import './utils/errorSuppression';
+// Import Firebase diagnostics for development
+import './utils/firebaseDiagnostics';
+// Import safe admin setup utilities
+import './utils/safeAdminSetup';
+// Import admin quick test utilities
+import './utils/adminQuickTest';
 
 // Enable production mode if not in development
 if (process.env.NODE_ENV === 'production') {
