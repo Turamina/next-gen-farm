@@ -85,22 +85,27 @@ const PaymentSuccess = () => {
         
         // Verify payment status with SSL Commerz
         const sessionKey = localStorage.getItem('paymentSessionKey');
+        let currentVerificationStatus = 'pending';
         
         if (transactionId && sessionKey) {
           try {
             setVerificationStatus('verifying');
+            currentVerificationStatus = 'verifying';
             const verificationResult = await verifyPayment(transactionId, sessionKey);
             
             if (!verificationResult.success) {
               console.warn('Payment verification warning:', verificationResult.error);
               setVerificationStatus('warning');
+              currentVerificationStatus = 'warning';
               // Continue with order processing even if verification has issues
             } else {
               setVerificationStatus('verified');
+              currentVerificationStatus = 'verified';
             }
           } catch (verificationError) {
             console.error('Payment verification error:', verificationError);
             setVerificationStatus('error');
+            currentVerificationStatus = 'error';
             // Continue with order processing even if verification fails
           }
         }
@@ -132,7 +137,7 @@ const PaymentSuccess = () => {
             transactionId: transactionId || pendingOrder.orderData.tran_id,
             paymentMethod: 'ssl_commerz',
             currency: pendingOrder.orderData.currency,
-            verificationStatus: verificationStatus,
+            verificationStatus: currentVerificationStatus,
             customerInfo: {
               name: pendingOrder.orderData.cus_name,
               email: pendingOrder.orderData.cus_email,
@@ -154,14 +159,14 @@ const PaymentSuccess = () => {
           totalAmount: orderData.totalAmount,
           items: cartItems.length,
           date: new Date().toLocaleDateString(),
-          verificationStatus: verificationStatus
+          verificationStatus: currentVerificationStatus
         });
         
         console.log('Order details set:', {
           orderId: result.orderId,
           totalAmount: orderData.totalAmount,
           items: cartItems.length,
-          verificationStatus: verificationStatus
+          verificationStatus: currentVerificationStatus
         });
         
         // Clear the pending order from localStorage

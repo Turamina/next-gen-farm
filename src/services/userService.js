@@ -72,6 +72,11 @@ export const userService = {
           privacy: {
             profileVisible: false,
             shareData: false
+          },
+          security: {
+            emailVerificationEnabled: true, // Default to enabled
+            twoFactorEnabled: false,
+            loginNotifications: true
           }
         },
         
@@ -141,6 +146,41 @@ export const userService = {
       });
     } catch (error) {
       console.error('Error updating last login:', error);
+    }
+  },
+
+  // Toggle email verification setting
+  toggleEmailVerification: async (uid, enabled) => {
+    try {
+      const userRef = doc(db, 'users', uid);
+      await updateDoc(userRef, {
+        'preferences.security.emailVerificationEnabled': enabled,
+        updatedAt: serverTimestamp()
+      });
+      
+      console.log(`Email verification ${enabled ? 'enabled' : 'disabled'} for user:`, uid);
+      return { success: true };
+    } catch (error) {
+      console.error('Error toggling email verification:', error);
+      throw error;
+    }
+  },
+
+  // Get user's email verification setting
+  getEmailVerificationSetting: async (uid) => {
+    try {
+      const userRef = doc(db, 'users', uid);
+      const userDoc = await getDoc(userRef);
+      
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        return userData.preferences?.security?.emailVerificationEnabled ?? true; // Default to true
+      }
+      
+      return true; // Default to enabled
+    } catch (error) {
+      console.error('Error getting email verification setting:', error);
+      return true; // Default to enabled on error
     }
   },
 

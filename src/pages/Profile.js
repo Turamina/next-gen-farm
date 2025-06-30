@@ -17,7 +17,8 @@ const Profile = () => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [orders, setOrders] = useState([]);
-  
+  const [emailVerificationLoading, setEmailVerificationLoading] = useState(false);
+
   // Profile form data
   const [profileData, setProfileData] = useState({
     firstName: '',
@@ -54,6 +55,11 @@ const Profile = () => {
     privacy: {
       profileVisible: false,
       shareData: false
+    },
+    security: {
+      emailVerificationEnabled: true,
+      twoFactorEnabled: false,
+      loginNotifications: true
     }
   });
 
@@ -420,6 +426,33 @@ const Profile = () => {
     }
   };
 
+  // Handle email verification toggle
+  const handleEmailVerificationToggle = async (enabled) => {
+    setEmailVerificationLoading(true);
+    setError('');
+    setMessage('');
+
+    try {
+      await userService.toggleEmailVerification(currentUser.uid, enabled);
+      
+      // Update local state
+      setPreferencesData(prev => ({
+        ...prev,
+        security: {
+          ...prev.security,
+          emailVerificationEnabled: enabled
+        }
+      }));
+
+      setMessage(`Email verification ${enabled ? 'enabled' : 'disabled'} successfully!`);
+    } catch (error) {
+      console.error('Error toggling email verification:', error);
+      setError('Failed to update email verification setting. Please try again.');
+    } finally {
+      setEmailVerificationLoading(false);
+    }
+  };
+
   if (!currentUser) {
     return (
       <div className="profile-container">
@@ -623,7 +656,9 @@ const Profile = () => {
                   <p>{currentUser.emailVerified ? 'Verified' : 'Not verified'}</p>
                 </div>
                 {!currentUser.emailVerified && (
-                  <button className="security-action">Verify</button>
+                  <button className="security-action" disabled={emailVerificationLoading}>
+                    {emailVerificationLoading ? 'Verifying...' : 'Verify'}
+                  </button>
                 )}
               </div>
             </div>
@@ -931,6 +966,41 @@ const Profile = () => {
                     placeholder="Special delivery instructions..."
                     rows="3"
                   />
+                </div>
+              </div>
+
+              <div className="preferences-section">
+                <h3>Security</h3>
+                <div className="preference-item">
+                  <label className="preference-label">
+                    <input 
+                      type="checkbox" 
+                      checked={preferencesData.security.emailVerificationEnabled}
+                      onChange={(e) => handleEmailVerificationToggle(e.target.checked)}
+                      disabled={emailVerificationLoading}
+                    />
+                    Enable email verification
+                  </label>
+                </div>
+                <div className="preference-item">
+                  <label className="preference-label">
+                    <input 
+                      type="checkbox" 
+                      checked={preferencesData.security.twoFactorEnabled}
+                      onChange={(e) => handlePreferencesChange('security', 'twoFactorEnabled', e.target.checked)}
+                    />
+                    Two-factor authentication
+                  </label>
+                </div>
+                <div className="preference-item">
+                  <label className="preference-label">
+                    <input 
+                      type="checkbox" 
+                      checked={preferencesData.security.loginNotifications}
+                      onChange={(e) => handlePreferencesChange('security', 'loginNotifications', e.target.checked)}
+                    />
+                    Login notifications
+                  </label>
                 </div>
               </div>
 

@@ -3,6 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
 import { accountService } from '../services/accountService';
+import { userService } from '../services/userService';
+import { sendOTPEmail } from '../services/emailService';
+import OTPVerification from '../components/OTPVerification';
 import './SignIn.css';
 
 const SignIn = () => {
@@ -14,6 +17,9 @@ const SignIn = () => {
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [showOTPVerification, setShowOTPVerification] = useState(false);
+  const [pendingUser, setPendingUser] = useState(null);
+  const [pendingUserProfile, setPendingUserProfile] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -67,25 +73,46 @@ const SignIn = () => {
       if (formData.accountType === 'farmer') {
         console.log('🔍 Looking for farmer profile in farmers collection...');
         userProfile = await accountService.getFarmerProfile(userCredential.user.uid);
-        if (userProfile) {
-          console.log('✅ Farmer profile found, updating last login...');
-          await accountService.updateLastLogin(userCredential.user.uid, 'farmer');
-          console.log('🎯 Redirecting farmer to dashboard...');
-          navigate('/farmer/dashboard');
-        } else {
+        if (!userProfile) {
           throw new Error('Farmer profile not found in farmers collection. Please check your account type or contact support.');
         }
       } else {
         console.log('🔍 Looking for customer profile in customers collection...');
         userProfile = await accountService.getCustomerProfile(userCredential.user.uid);
-        if (userProfile) {
-          console.log('✅ Customer profile found, updating last login...');
-          await accountService.updateLastLogin(userCredential.user.uid, 'customer');
-          console.log('🎯 Redirecting customer to home...');
-          navigate('/');
-        } else {
+        if (!userProfile) {
           throw new Error('Customer profile not found in customers collection. Please check your account type or contact support.');
         }
+      }
+
+      // Check if email verification is enabled for this user
+      const emailVerificationEnabled = await userService.getEmailVerificationSetting(userCredential.user.uid);
+      
+      if (emailVerificationEnabled) {
+        console.log('Email verification is enabled, sending OTP...');
+        
+        // Store user data for after verification
+        setPendingUser(userCredential);
+        setPendingUserProfile(userProfile);
+        
+        // Generate and send OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpResult = await sendOTPEmail(formData.email, otp, 'signin', formData.accountType);
+        
+        if (otpResult.success) {
+          setShowOTPVerification(true);
+          console.log('OTP sent successfully for signin verification');
+          
+          // Show development OTP in console
+          if (otpResult.developmentOTP) {
+            console.log(`🔐 Development OTP for ${formData.email}: ${otpResult.developmentOTP}`);
+          }
+        } else {
+          throw new Error('Failed to send verification email. Please try again.');
+        }
+      } else {
+        // Email verification is disabled, proceed with normal signin
+        console.log('Email verification is disabled, proceeding with signin...');
+        await completeSignIn(userCredential, userProfile);
       }
       
     } catch (error) {
@@ -106,6 +133,63 @@ const SignIn = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const completeSignIn = async (userCredential, userProfile) => {
+    try {
+      console.log('Completing signin process...');
+      
+      if (formData.accountType === 'farmer') {
+        console.log('✅ Farmer profile found, updating last login...');
+        await accountService.updateLastLogin(userCredential.user.uid, 'farmer');
+        console.log('🎯 Redirecting farmer to dashboard...');
+        navigate('/farmer/dashboard');
+      } else {
+        console.log('✅ Customer profile found, updating last login...');
+        await accountService.updateLastLogin(userCredential.user.uid, 'customer');
+        console.log('🎯 Redirecting customer to home...');
+        navigate('/');
+      }
+    } catch (error) {
+      console.error('Error completing signin:', error);
+      setErrors({ general: 'Error completing signin. Please try again.' });
+    }
+  };
+
+  const handleOTPVerified = async (otpData) => {
+    try {
+      console.log('OTP verified successfully, completing signin...');
+      setShowOTPVerification(false);
+      
+      if (pendingUser && pendingUserProfile) {
+        await completeSignIn(pendingUser, pendingUserProfile);
+      } else {
+        throw new Error('Missing pending user data');
+      }
+    } catch (error) {
+      console.error('Error after OTP verification:', error);
+      setErrors({ general: 'Error completing signin after verification. Please try again.' });
+    } finally {
+      setIsLoading(false);
+      setPendingUser(null);
+      setPendingUserProfile(null);
+    }
+  };
+
+  const handleOTPCancel = () => {
+    setShowOTPVerification(false);
+    setIsLoading(false);
+    setPendingUser(null);
+    setPendingUserProfile(null);
+    
+    // Sign out the user since they cancelled verification
+    if (pendingUser) {
+      auth.signOut();
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    await handleSignIn(e);
   };
 
   return (
@@ -207,6 +291,16 @@ const SignIn = () => {
           </div>
         </div>
       </div>
+
+      {/* OTP Verification Modal */}
+      <OTPVerification
+        email={formData.email}
+        type="signin"
+        userType={formData.accountType}
+        onVerified={handleOTPVerified}
+        onCancel={handleOTPCancel}
+        isVisible={showOTPVerification}
+      />
     </div>
   );
 };

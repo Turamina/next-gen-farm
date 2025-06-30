@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { accountService } from '../services/accountService';
+import { userService } from '../services/userService';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   collection, 
@@ -25,6 +26,11 @@ const FarmerDashboard = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  
+  // Settings State
+  const [showSettings, setShowSettings] = useState(false);
+  const [emailVerificationEnabled, setEmailVerificationEnabled] = useState(true);
+  const [emailVerificationLoading, setEmailVerificationLoading] = useState(false);
   
   // Add Product State
   const [showAddProduct, setShowAddProduct] = useState(false);
@@ -84,6 +90,10 @@ const FarmerDashboard = () => {
       const allProducts = await accountService.getFarmerProducts(currentUser.uid);
       setProducts(allProducts);
       
+      // Load email verification setting
+      const emailVerificationSetting = await userService.getEmailVerificationSetting(currentUser.uid);
+      setEmailVerificationEnabled(emailVerificationSetting);
+      
       console.log('✅ Farmer dashboard data loaded');
       
     } catch (error) {
@@ -111,6 +121,22 @@ const FarmerDashboard = () => {
         ...prev,
         [name]: type === 'checkbox' ? checked : value
       }));
+    }
+  };
+
+  // Handle email verification toggle for farmers
+  const handleEmailVerificationToggle = async (enabled) => {
+    setEmailVerificationLoading(true);
+
+    try {
+      await userService.toggleEmailVerification(currentUser.uid, enabled);
+      setEmailVerificationEnabled(enabled);
+      showMessage(`Email verification ${enabled ? 'enabled' : 'disabled'} successfully!`, 'success');
+    } catch (error) {
+      console.error('Error toggling email verification:', error);
+      showMessage('Failed to update email verification setting. Please try again.', 'error');
+    } finally {
+      setEmailVerificationLoading(false);
     }
   };
 
@@ -260,6 +286,58 @@ const FarmerDashboard = () => {
           {message.text}
         </div>
       )}
+
+      {/* Farmer Settings Section */}
+      <div className="farmer-settings">
+        <div className="section-header">
+          <h2>Account Settings</h2>
+          <button 
+            className="settings-toggle-btn"
+            onClick={() => setShowSettings(!showSettings)}
+          >
+            {showSettings ? '🔼 Hide Settings' : '🔽 Show Settings'}
+          </button>
+        </div>
+
+        {showSettings && (
+          <div className="settings-content">
+            <div className="settings-section">
+              <h3>🔐 Security Settings</h3>
+              <div className="setting-item">
+                <label className="setting-label">
+                  <div className="setting-info">
+                    <span className="setting-title">Email Verification for Sign In</span>
+                    <span className="setting-description">
+                      Require email verification with OTP when signing into your farmer account
+                    </span>
+                  </div>
+                  <div className="setting-control">
+                    <label className="toggle-switch">
+                      <input 
+                        type="checkbox" 
+                        checked={emailVerificationEnabled}
+                        onChange={(e) => handleEmailVerificationToggle(e.target.checked)}
+                        disabled={emailVerificationLoading}
+                      />
+                      <span className="toggle-slider"></span>
+                    </label>
+                    {emailVerificationLoading && (
+                      <span className="loading-text">Updating...</span>
+                    )}
+                  </div>
+                </label>
+              </div>
+              
+              <div className="setting-note">
+                <p>
+                  <strong>Note:</strong> When enabled, you'll receive a 6-digit verification code 
+                  via email every time you sign in. This adds an extra layer of security to your account.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       <div className="product-management">
         <div className="section-header">

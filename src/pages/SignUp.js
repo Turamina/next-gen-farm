@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
 import { accountService } from '../services/accountService';
+import { sendOTPEmail } from '../services/emailService';
+import OTPVerification from '../components/OTPVerification';
 import './SignUp.css';
 
 function SignUp() {
@@ -20,6 +22,8 @@ function SignUp() {
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [showOTPVerification, setShowOTPVerification] = useState(false);
+  const [pendingAccountData, setPendingAccountData] = useState(null);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -92,40 +96,83 @@ function SignUp() {
     setErrors({});
 
     try {
-      console.log('🔄 Starting account creation process...');
+      console.log('🔄 Starting account creation process with email verification...');
       
-      // Create user account with Firebase
+      // Store account data for after verification
+      setPendingAccountData({
+        email: formData.email,
+        password: formData.password,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phoneNumber: formData.phoneNumber,
+        farmName: formData.farmName,
+        address: formData.address,
+        accountType: formData.accountType
+      });
+      
+      // Generate and send OTP for signup verification
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const otpResult = await sendOTPEmail(formData.email, otp, 'signup', formData.accountType);
+      
+      if (otpResult.success) {
+        setShowOTPVerification(true);
+        console.log('OTP sent successfully for signup verification');
+        
+        // Show development OTP in console
+        if (otpResult.developmentOTP) {
+          console.log(`🔐 Development OTP for ${formData.email}: ${otpResult.developmentOTP}`);
+        }
+      } else {
+        throw new Error('Failed to send verification email. Please try again.');
+      }
+      
+    } catch (error) {
+      console.error('Error in signup process:', error);
+      
+      let errorMessage = 'Failed to start signup process. Please try again.';
+      if (error.message.includes('verification email')) {
+        errorMessage = 'Failed to send verification email. Please check your email address and try again.';
+      }
+      
+      setErrors({ submit: errorMessage });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const completeAccountCreation = async (accountData) => {
+    try {
       console.log('📝 Step 1: Creating Firebase user account...');
-      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      const userCredential = await createUserWithEmailAndPassword(auth, accountData.email, accountData.password);
       console.log('✅ Step 1 completed: Firebase user created', userCredential.user.uid);
       
       // Update user profile with name
       console.log('📝 Step 2: Updating user profile with display name...');
       await updateProfile(userCredential.user, {
-        displayName: `${formData.firstName} ${formData.lastName}`
+        displayName: `${accountData.firstName} ${accountData.lastName}`
       });
       console.log('✅ Step 2 completed: Display name updated');
       
       // Create user profile based on account type
       console.log('📝 Step 3: Creating user profile in database...');
       const profileData = {
-        email: formData.email,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        displayName: `${formData.firstName} ${formData.lastName}`,
-        phoneNumber: formData.phoneNumber,
-        farmName: formData.farmName,
+        email: accountData.email,
+        firstName: accountData.firstName,
+        lastName: accountData.lastName,
+        displayName: `${accountData.firstName} ${accountData.lastName}`,
+        phoneNumber: accountData.phoneNumber,
+        farmName: accountData.farmName,
         address: {
-          street: formData.address,
+          street: accountData.address,
           city: '',
           state: '',
           zipCode: '',
           country: 'USA'
         },
-        accountType: formData.accountType
+        accountType: accountData.accountType
       };
       
-      if (formData.accountType === 'farmer') {
+      if (accountData.accountType === 'farmer') {
         console.log('📝 Step 3a: Creating farmer profile in farmers collection...');
         await accountService.createFarmerProfile(userCredential.user.uid, profileData);
         console.log('✅ Step 3a completed: Farmer profile created in farmers collection');
@@ -170,6 +217,32 @@ function SignUp() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleOTPVerified = async (otpData) => {
+    try {
+      console.log('OTP verified successfully, creating account...');
+      setShowOTPVerification(false);
+      setIsLoading(true);
+      
+      if (pendingAccountData) {
+        await completeAccountCreation(pendingAccountData);
+      } else {
+        throw new Error('Missing pending account data');
+      }
+    } catch (error) {
+      console.error('Error after OTP verification:', error);
+      setErrors({ submit: 'Error creating account after verification. Please try again.' });
+    } finally {
+      setIsLoading(false);
+      setPendingAccountData(null);
+    }
+  };
+
+  const handleOTPCancel = () => {
+    setShowOTPVerification(false);
+    setIsLoading(false);
+    setPendingAccountData(null);
   };
 
   return (
@@ -402,6 +475,16 @@ function SignUp() {
           </div>
         </div>
       </div>
+
+      {/* OTP Verification Component */}
+      <OTPVerification
+        email={formData.email}
+        type="signup"
+        userType={formData.accountType}
+        onVerified={handleOTPVerified}
+        onCancel={handleOTPCancel}
+        isVisible={showOTPVerification}
+      />
     </div>
   );
 }
