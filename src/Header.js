@@ -7,7 +7,7 @@ import logo from './assets/logo.jpeg';
 
 function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const { currentUser, userProfile, userType, logout } = useAuth();
+  const { currentUser, userProfile, logout } = useAuth();
   const { getCartItemCount } = useCart();
   
   const cartItemCount = getCartItemCount();
@@ -54,6 +54,11 @@ function Header() {
             </Link>
           </li>
           <li>
+            <Link to="/cattle" onClick={handleLinkClick} className="nav-link">
+              Cattle
+            </Link>
+          </li>
+          <li>
             <Link to="/about" onClick={handleLinkClick} className="nav-link">
               About
             </Link>
@@ -83,55 +88,12 @@ function Header() {
               )}
             </Link>
             <Link 
-              to={userType === 'farmer' ? "/farmer/profile" : "/profile"} 
+              to="/profile" 
               className="user-welcome" 
               onClick={handleLinkClick}
-              title={userType === 'farmer' ? "Farmer Profile" : "Customer Profile"}
             >
-              {userType === 'farmer' ? '🌾' : '👤'} Welcome, {currentUser.displayName || currentUser.email}
-              {userType === 'farmer' && userProfile?.farmName && (
-                <small className="farm-name"> - {userProfile.farmName}</small>
-              )}
+              Welcome, {currentUser.displayName || currentUser.email}
             </Link>
-            {userType === 'farmer' && (
-              <>
-                <Link 
-                  to="/farmer/dashboard" 
-                  className="auth-btn farmer-dashboard-btn" 
-                  onClick={handleLinkClick}
-                >
-                  Dashboard
-                </Link>
-                <Link 
-                  to="/farmer/products" 
-                  className="auth-btn farmer-products-btn" 
-                  onClick={handleLinkClick}
-                >
-                  My Products
-                </Link>
-                <Link 
-                  to="/farmer/add-product" 
-                  className="auth-btn farmer-add-product-btn" 
-                  onClick={handleLinkClick}
-                >
-                  Add Product
-                </Link>
-                <Link 
-                  to="/farmer/cattle" 
-                  className="auth-btn farmer-cattle-btn" 
-                  onClick={handleLinkClick}
-                >
-                  Cattle Management
-                </Link>
-                <Link 
-                  to="/farmer/orders" 
-                  className="auth-btn farmer-orders-btn" 
-                  onClick={handleLinkClick}
-                >
-                  Orders
-                </Link>
-              </>
-            )}
             {isAdmin && (
               <Link 
                 to="/admin" 

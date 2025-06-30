@@ -32,13 +32,24 @@ export const userService = {
         lastName: userData.lastName || '',
         displayName: userData.displayName || `${userData.firstName} ${userData.lastName}`,
         phoneNumber: userData.phoneNumber || '',
-        accountType: userData.accountType || 'customer', // Add account type
         
-        // Farm Information (for legacy compatibility)
+        // Farm Information
         farmName: userData.farmName || '',
         farmAddress: userData.farmAddress || '',
         farmType: userData.farmType || '',
         farmSize: userData.farmSize || '',
+        
+        // Cattle Information
+        cattle: {
+          totalCount: 0,
+          types: {
+            dairy: 0,
+            beef: 0,
+            other: 0
+          },
+          totalDailyFoodRequirement: 0,
+          lastUpdated: null
+        },
         
         // Profile Details
         bio: userData.bio || '',
@@ -72,11 +83,6 @@ export const userService = {
           privacy: {
             profileVisible: false,
             shareData: false
-          },
-          security: {
-            emailVerificationEnabled: true, // Default to enabled
-            twoFactorEnabled: false,
-            loginNotifications: true
           }
         },
         
@@ -149,41 +155,6 @@ export const userService = {
     }
   },
 
-  // Toggle email verification setting
-  toggleEmailVerification: async (uid, enabled) => {
-    try {
-      const userRef = doc(db, 'users', uid);
-      await updateDoc(userRef, {
-        'preferences.security.emailVerificationEnabled': enabled,
-        updatedAt: serverTimestamp()
-      });
-      
-      console.log(`Email verification ${enabled ? 'enabled' : 'disabled'} for user:`, uid);
-      return { success: true };
-    } catch (error) {
-      console.error('Error toggling email verification:', error);
-      throw error;
-    }
-  },
-
-  // Get user's email verification setting
-  getEmailVerificationSetting: async (uid) => {
-    try {
-      const userRef = doc(db, 'users', uid);
-      const userDoc = await getDoc(userRef);
-      
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        return userData.preferences?.security?.emailVerificationEnabled ?? true; // Default to true
-      }
-      
-      return true; // Default to enabled
-    } catch (error) {
-      console.error('Error getting email verification setting:', error);
-      return true; // Default to enabled on error
-    }
-  },
-
   // Delete user account and all associated data
   deleteUserAccount: async (uid) => {
     try {
@@ -216,12 +187,49 @@ export const userService = {
       console.error('Error deleting user account:', error);
       throw error;
     }
+  },
+
+  // Export cattle management service
+  cattleService: {
+    // Update cattle statistics in user profile
+    updateCattleStats: async (uid) => {
+      try {
+        const { adminService } = await import('./adminService');
+        
+        // Get all cattle for the user
+        const cattle = await adminService.getUserCattle(uid);
+        
+        // Calculate totals
+        const stats = {
+          totalCount: cattle.length,
+          types: {
+            dairy: cattle.filter(c => c.type?.toLowerCase() === 'dairy').length,
+            beef: cattle.filter(c => c.type?.toLowerCase() === 'beef').length,
+            other: cattle.filter(c => !['dairy', 'beef'].includes(c.type?.toLowerCase())).length
+          },
+          totalDailyFoodRequirement: await adminService.getTotalFoodRequirement(uid),
+          lastUpdated: serverTimestamp()
+        };
+
+        // Update user profile
+        const userRef = doc(db, 'users', uid);
+        await updateDoc(userRef, {
+          'cattle': stats,
+          updatedAt: serverTimestamp()
+        });
+
+        return stats;
+      } catch (error) {
+        console.error('Error updating cattle statistics:', error);
+        throw error;
+      }
+    }
   }
 };
 
 // Order Management Service
 export const orderService = {
-  // Create a new order
+    // Create a new order
   createOrder: async (uid, orderData) => {
     try {
       console.log('Creating order for user:', uid);

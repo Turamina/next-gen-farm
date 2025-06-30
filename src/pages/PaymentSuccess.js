@@ -19,12 +19,7 @@ const PaymentSuccess = () => {
 
   useEffect(() => {
     const processPendingOrder = async () => {
-      console.log('=== PAYMENT SUCCESS PROCESSING ===');
-      console.log('Current user:', currentUser?.uid);
-      console.log('Location search:', location.search);
-      
       if (!currentUser) {
-        console.log('No current user, redirecting to signin');
         navigate('/signin');
         return;
       }
@@ -37,12 +32,8 @@ const PaymentSuccess = () => {
         const transactionId = searchParams.get('val_id') || localStorage.getItem('pendingTransactionId');
         const status = searchParams.get('status');
         
-        console.log('Transaction ID:', transactionId);
-        console.log('Payment Status:', status);
-        
         // First check if we have transaction data from URL
         if (status && status.toUpperCase() !== 'VALID' && status.toUpperCase() !== 'SUCCESS') {
-          console.log('Payment status not valid:', status);
           setError('Payment was not successful. Status: ' + status);
           setLoading(false);
           return;
@@ -50,22 +41,6 @@ const PaymentSuccess = () => {
         
         // Retrieve pending order from localStorage
         const pendingOrderJson = localStorage.getItem('pendingOrder');
-        console.log('Pending order from localStorage:', pendingOrderJson ? 'Found' : 'Not found');
-        
-        // If no pending order but we have URL params indicating success, show a basic success message
-        if (!pendingOrderJson && (status === 'VALID' || status === 'SUCCESS') && transactionId) {
-          console.log('No pending order but payment seems successful, showing basic success message');
-          setOrderDetails({
-            orderId: transactionId,
-            totalAmount: 'Unknown',
-            items: 'Unknown',
-            date: new Date().toLocaleDateString(),
-            verificationStatus: 'pending'
-          });
-          setLoading(false);
-          return;
-        }
-        
         if (!pendingOrderJson) {
           setError('No pending order found');
           setLoading(false);
@@ -73,11 +48,9 @@ const PaymentSuccess = () => {
         }
         
         const pendingOrder = JSON.parse(pendingOrderJson);
-        console.log('Parsed pending order:', pendingOrder);
         
         // Check if the order belongs to the current user
         if (pendingOrder.orderData.value_a !== currentUser.uid) {
-          console.log('Order user mismatch:', pendingOrder.orderData.value_a, 'vs', currentUser.uid);
           setError('Order user mismatch');
           setLoading(false);
           return;
@@ -85,27 +58,22 @@ const PaymentSuccess = () => {
         
         // Verify payment status with SSL Commerz
         const sessionKey = localStorage.getItem('paymentSessionKey');
-        let currentVerificationStatus = 'pending';
         
         if (transactionId && sessionKey) {
           try {
             setVerificationStatus('verifying');
-            currentVerificationStatus = 'verifying';
             const verificationResult = await verifyPayment(transactionId, sessionKey);
             
             if (!verificationResult.success) {
               console.warn('Payment verification warning:', verificationResult.error);
               setVerificationStatus('warning');
-              currentVerificationStatus = 'warning';
               // Continue with order processing even if verification has issues
             } else {
               setVerificationStatus('verified');
-              currentVerificationStatus = 'verified';
             }
           } catch (verificationError) {
             console.error('Payment verification error:', verificationError);
             setVerificationStatus('error');
-            currentVerificationStatus = 'error';
             // Continue with order processing even if verification fails
           }
         }
@@ -137,7 +105,7 @@ const PaymentSuccess = () => {
             transactionId: transactionId || pendingOrder.orderData.tran_id,
             paymentMethod: 'ssl_commerz',
             currency: pendingOrder.orderData.currency,
-            verificationStatus: currentVerificationStatus,
+            verificationStatus: verificationStatus,
             customerInfo: {
               name: pendingOrder.orderData.cus_name,
               email: pendingOrder.orderData.cus_email,
@@ -149,9 +117,7 @@ const PaymentSuccess = () => {
         };
         
         // Create the order in the database
-        console.log('Creating order in database...');
         const result = await orderService.createOrder(currentUser.uid, orderData);
-        console.log('Order created successfully:', result);
         
         // Update order details for display
         setOrderDetails({
@@ -159,14 +125,7 @@ const PaymentSuccess = () => {
           totalAmount: orderData.totalAmount,
           items: cartItems.length,
           date: new Date().toLocaleDateString(),
-          verificationStatus: currentVerificationStatus
-        });
-        
-        console.log('Order details set:', {
-          orderId: result.orderId,
-          totalAmount: orderData.totalAmount,
-          items: cartItems.length,
-          verificationStatus: currentVerificationStatus
+          verificationStatus: verificationStatus
         });
         
         // Clear the pending order from localStorage
@@ -177,15 +136,12 @@ const PaymentSuccess = () => {
         
         // Clear the cart
         await clearCart();
-        console.log('Cart cleared and localStorage cleaned up');
         
       } catch (error) {
         console.error('Error processing order:', error);
-        console.error('Error stack:', error.stack);
-        setError(`Failed to process your order: ${error.message}. Please contact customer support.`);
+        setError('Failed to process your order. Please contact customer support.');
       } finally {
         setLoading(false);
-        console.log('Payment processing completed');
       }
     };
 

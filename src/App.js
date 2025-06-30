@@ -4,7 +4,6 @@ import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
 import Header from './Header';
 import Footer from './components/Footer';
-import FarmerLayout from './components/FarmerLayout';
 import Home from './pages/Home';
 import Products from './pages/Products';
 import SignUp from './pages/SignUp';
@@ -18,18 +17,11 @@ import Admin from './pages/Admin';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentFailed from './pages/PaymentFailed';
 import PaymentCanceled from './pages/PaymentCanceled';
-import FarmerDashboard from './pages/FarmerDashboard';
-import FarmerProducts from './pages/FarmerProducts';
-import FarmerOrders from './pages/FarmerOrders';
-import AddProduct from './pages/AddProduct';
-import CattleManagement from './pages/CattleManagement';
-import AdminSetup from './pages/AdminSetup';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
 // Import admin account utilities for console access
 import './utils/createAdminAccount';
-import './utils/adminReset';
 
 // Add debug functions for console testing
 window.debugProducts = async function() {
@@ -292,192 +284,36 @@ function App() {
       <CartProvider>
         <Router>
           <div className="App">
-            <Routes>
-              {/* Regular routes with Header and Footer */}
-              <Route path="/" element={
-                <>
-                  <Header />
-                  <main className="app-main-content">
-                    <Home />
-                  </main>
-                  <Footer />
-                </>
-              } />
-              <Route path="/products" element={
-                <>
-                  <Header />
-                  <main className="app-main-content">
-                    <Products />
-                  </main>
-                  <Footer />
-                </>
-              } />
-              <Route path="/signup" element={
-                <>
-                  <Header />
-                  <main className="app-main-content">
-                    <SignUp />
-                  </main>
-                  <Footer />
-                </>
-              } />
-              <Route path="/signin" element={
-                <>
-                  <Header />
-                  <main className="app-main-content">
-                    <SignIn />
-                  </main>
-                  <Footer />
-                </>
-              } />
-              <Route path="/forgot-password" element={
-                <>
-                  <Header />
-                  <main className="app-main-content">
-                    <ForgotPassword />
-                  </main>
-                  <Footer />
-                </>
-              } />
-              <Route path="/profile" element={
-                <ProtectedRoute>
-                  <>
-                    <Header />
-                    <main className="app-main-content">
-                      <Profile />
-                    </main>
-                    <Footer />
-                  </>
-                </ProtectedRoute>
-              } />
-              <Route path="/settings" element={
-                <ProtectedRoute>
-                  <>
-                    <Header />
-                    <main className="app-main-content">
-                      <Settings />
-                    </main>
-                    <Footer />
-                  </>
-                </ProtectedRoute>
-              } />              
-              <Route path="/admin" element={
-                <ProtectedRoute>
-                  <>
-                    <Header />
-                    <main className="app-main-content">
-                      <Admin />
-                    </main>
-                    <Footer />
-                  </>
-                </ProtectedRoute>
-              } />
-              <Route path="/about" element={
-                <>
-                  <Header />
-                  <main className="app-main-content">
-                    <About />
-                  </main>
-                  <Footer />
-                </>
-              } />
-              <Route path="/contact" element={
-                <>
-                  <Header />
-                  <main className="app-main-content">
-                    <Contact />
-                  </main>
-                  <Footer />
-                </>
-              } />
-              <Route path="/payment-success" element={
-                <>
-                  <Header />
-                  <main className="app-main-content">
-                    <PaymentSuccess />
-                  </main>
-                  <Footer />
-                </>
-              } />
-              <Route path="/payment-failed" element={
-                <>
-                  <Header />
-                  <main className="app-main-content">
-                    <PaymentFailed />
-                  </main>
-                  <Footer />
-                </>
-              } />
-              <Route path="/payment-canceled" element={
-                <>
-                  <Header />
-                  <main className="app-main-content">
-                    <PaymentCanceled />
-                  </main>
-                  <Footer />
-                </>
-              } />
-              
-              {/* Farmer Routes with FarmerLayout */}
-              <Route path="/farmer/dashboard" element={
-                <ProtectedRoute requireFarmer={true}>
-                  <FarmerLayout>
-                    <FarmerDashboard />
-                  </FarmerLayout>
-                </ProtectedRoute>
-              } />
-              <Route path="/farmer/products" element={
-                <ProtectedRoute requireFarmer={true}>
-                  <FarmerLayout>
-                    <FarmerProducts />
-                  </FarmerLayout>
-                </ProtectedRoute>
-              } />
-              <Route path="/farmer/orders" element={
-                <ProtectedRoute requireFarmer={true}>
-                  <FarmerLayout>
-                    <FarmerOrders />
-                  </FarmerLayout>
-                </ProtectedRoute>
-              } />
-              <Route path="/farmer/add-product" element={
-                <ProtectedRoute requireFarmer={true}>
-                  <FarmerLayout>
-                    <AddProduct />
-                  </FarmerLayout>
-                </ProtectedRoute>
-              } />
-              <Route path="/farmer/cattle" element={
-                <ProtectedRoute requireFarmer={true}>
-                  <FarmerLayout>
-                    <CattleManagement />
-                  </FarmerLayout>
-                </ProtectedRoute>
-              } />
-              <Route path="/farmer/profile" element={
-                <ProtectedRoute requireFarmer={true}>
-                  <FarmerLayout>
+            <Header />
+            <main className="app-main-content">
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/products" element={<Products />} />
+                <Route path="/signup" element={<SignUp />} />
+                <Route path="/signin" element={<SignIn />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/profile" element={
+                  <ProtectedRoute>
                     <Profile />
-                  </FarmerLayout>
-                </ProtectedRoute>
-              } />
-              <Route path="/farmer/settings" element={
-                <ProtectedRoute requireFarmer={true}>
-                  <FarmerLayout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/settings" element={
+                  <ProtectedRoute>
                     <Settings />
-                  </FarmerLayout>
+                  </ProtectedRoute>
+                } />              <Route path="/admin" element={
+                <ProtectedRoute>
+                  <Admin />
                 </ProtectedRoute>
               } />
-              
-              {/* Admin Setup Route without Header/Footer */}
-              <Route path="/admin-setup" element={
-                <>
-                  <main className="app-main-content">
-                    <AdminSetup />
-                  </main>
-                </>
-              } />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/payment-success" element={<PaymentSuccess />} />
+              <Route path="/payment-failed" element={<PaymentFailed />} />
+              <Route path="/payment-canceled" element={<PaymentCanceled />} />
             </Routes>
+            </main>
+            <Footer />
           </div>
         </Router>
       </CartProvider>

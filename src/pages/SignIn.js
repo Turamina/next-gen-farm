@@ -2,24 +2,16 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
-import { accountService } from '../services/accountService';
-import { userService } from '../services/userService';
-import { sendOTPEmail } from '../services/emailService';
-import OTPVerification from '../components/OTPVerification';
 import './SignIn.css';
 
 const SignIn = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
-    password: '',
-    accountType: 'customer' // new field for account type selection
+    password: ''
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-  const [showOTPVerification, setShowOTPVerification] = useState(false);
-  const [pendingUser, setPendingUser] = useState(null);
-  const [pendingUserProfile, setPendingUserProfile] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -67,57 +59,8 @@ const SignIn = () => {
       const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
       console.log('User signed in successfully:', userCredential.user.email);
       
-      // Get user profile from any collection (admin, farmer, or customer)
-      let userProfile = null;
-      
-      console.log('🔍 Looking for user profile in all collections...');
-      userProfile = await accountService.getUserProfile(userCredential.user.uid);
-      
-      if (!userProfile) {
-        throw new Error(`No profile found for this account. Please check your account type or contact support.`);
-      }
-      
-      console.log(`✅ Found ${userProfile.accountType} profile for user`);
-      
-      // For non-admin users, verify they selected the correct account type
-      if (userProfile.accountType !== 'admin') {
-        if (formData.accountType !== userProfile.accountType) {
-          throw new Error(`Account type mismatch. This is a ${userProfile.accountType} account, but you selected ${formData.accountType}. Please select the correct account type.`);
-        }
-      }
-      
-      // Admin accounts can sign in with any account type selected
-
-      // Check if email verification is enabled for this user
-      const emailVerificationEnabled = await userService.getEmailVerificationSetting(userCredential.user.uid);
-      
-      if (emailVerificationEnabled) {
-        console.log('Email verification is enabled, sending OTP...');
-        
-        // Store user data for after verification
-        setPendingUser(userCredential);
-        setPendingUserProfile(userProfile);
-        
-        // Generate and send OTP
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const otpResult = await sendOTPEmail(formData.email, otp, 'signin', formData.accountType);
-        
-        if (otpResult.success) {
-          setShowOTPVerification(true);
-          console.log('OTP sent successfully for signin verification');
-          
-          // Show development OTP in console
-          if (otpResult.developmentOTP) {
-            console.log(`🔐 Development OTP for ${formData.email}: ${otpResult.developmentOTP}`);
-          }
-        } else {
-          throw new Error('Failed to send verification email. Please try again.');
-        }
-      } else {
-        // Email verification is disabled, proceed with normal signin
-        console.log('Email verification is disabled, proceeding with signin...');
-        await completeSignIn(userCredential, userProfile);
-      }
+      // Success - redirect to home page
+      navigate('/');
       
     } catch (error) {
       console.error('Error signing in:', error);
@@ -139,63 +82,6 @@ const SignIn = () => {
     }
   };
 
-  const completeSignIn = async (userCredential, userProfile) => {
-    try {
-      console.log('Completing signin process...');
-      
-      if (formData.accountType === 'farmer') {
-        console.log('✅ Farmer profile found, updating last login...');
-        await accountService.updateLastLogin(userCredential.user.uid, 'farmer');
-        console.log('🎯 Redirecting farmer to dashboard...');
-        navigate('/farmer/dashboard');
-      } else {
-        console.log('✅ Customer profile found, updating last login...');
-        await accountService.updateLastLogin(userCredential.user.uid, 'customer');
-        console.log('🎯 Redirecting customer to home...');
-        navigate('/');
-      }
-    } catch (error) {
-      console.error('Error completing signin:', error);
-      setErrors({ general: 'Error completing signin. Please try again.' });
-    }
-  };
-
-  const handleOTPVerified = async (otpData) => {
-    try {
-      console.log('OTP verified successfully, completing signin...');
-      setShowOTPVerification(false);
-      
-      if (pendingUser && pendingUserProfile) {
-        await completeSignIn(pendingUser, pendingUserProfile);
-      } else {
-        throw new Error('Missing pending user data');
-      }
-    } catch (error) {
-      console.error('Error after OTP verification:', error);
-      setErrors({ general: 'Error completing signin after verification. Please try again.' });
-    } finally {
-      setIsLoading(false);
-      setPendingUser(null);
-      setPendingUserProfile(null);
-    }
-  };
-
-  const handleOTPCancel = () => {
-    setShowOTPVerification(false);
-    setIsLoading(false);
-    setPendingUser(null);
-    setPendingUserProfile(null);
-    
-    // Sign out the user since they cancelled verification
-    if (pendingUser) {
-      auth.signOut();
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    await handleSignIn(e);
-  };
-
   return (
     <div className="signin-container">
       <div className="signin-background">
@@ -207,43 +93,6 @@ const SignIn = () => {
           </div>
 
           <form onSubmit={handleSignIn} className="signin-form">
-            {/* Account Type Selection */}
-            <div className="form-group account-type-group">
-              <label>Sign in as *</label>
-              <div className="account-type-options">
-                <label className={`account-type-option ${formData.accountType === 'customer' ? 'selected' : ''}`}>
-                  <input
-                    type="radio"
-                    name="accountType"
-                    value="customer"
-                    checked={formData.accountType === 'customer'}
-                    onChange={handleChange}
-                  />
-                  <div className="option-content">
-                    <div className="option-icon">🛒</div>
-                    <div className="option-text">
-                      <h3>Customer</h3>
-                    </div>
-                  </div>
-                </label>
-                <label className={`account-type-option ${formData.accountType === 'farmer' ? 'selected' : ''}`}>
-                  <input
-                    type="radio"
-                    name="accountType"
-                    value="farmer"
-                    checked={formData.accountType === 'farmer'}
-                    onChange={handleChange}
-                  />
-                  <div className="option-content">
-                    <div className="option-icon">🌾</div>
-                    <div className="option-text">
-                      <h3>Farmer</h3>
-                    </div>
-                  </div>
-                </label>
-              </div>
-            </div>
-
             <div className="form-group">
               <label htmlFor="email">Email Address</label>
               <input
@@ -295,16 +144,6 @@ const SignIn = () => {
           </div>
         </div>
       </div>
-
-      {/* OTP Verification Modal */}
-      <OTPVerification
-        email={formData.email}
-        type="signin"
-        userType={formData.accountType}
-        onVerified={handleOTPVerified}
-        onCancel={handleOTPCancel}
-        isVisible={showOTPVerification}
-      />
     </div>
   );
 };

@@ -10,37 +10,16 @@ const firebaseConfig = {
   authDomain: "next-gen-farm.firebaseapp.com",
   projectId: "next-gen-farm",
   storageBucket: "next-gen-farm.appspot.com",
-  messagingSenderId: "565479424733",
-  appId: "1:565479424733:web:8a9b7c6d5e4f3a2b1c0d9e"
+  messagingSenderId: "123456789012",
+  appId: "1:123456789012:web:abcdef123456789012345678"
 };
 
-// Log configuration for debugging
-console.log('Firebase Config:', {
-  apiKey: firebaseConfig.apiKey ? 'SET' : 'NOT SET',
-  authDomain: firebaseConfig.authDomain,
-  projectId: firebaseConfig.projectId,
-  storageBucket: firebaseConfig.storageBucket,
-  messagingSenderId: firebaseConfig.messagingSenderId,
-  appId: firebaseConfig.appId
-});
-
 // Initialize Firebase
-let app;
-let auth;
-let db;
-let storage;
-
-try {
-  app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
-  db = getFirestore(app);
-  storage = getStorage(app);
-  console.log('Firebase initialized successfully');
-} catch (error) {
-  console.error('Firebase initialization error:', error);
-  throw error;
-}
+const app = initializeApp(firebaseConfig);
 
 // Initialize Firebase services
-export { auth, db, storage };
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+export const storage = getStorage(app);
+
 export default app;
