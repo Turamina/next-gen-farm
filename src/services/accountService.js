@@ -177,28 +177,55 @@ export const accountService = {
     }
   },
 
+  // Get Admin Profile from 'adminUsers' collection
+  getAdminProfile: async (uid) => {
+    try {
+      console.log('🔍 Fetching admin profile for UID:', uid);
+      const adminRef = doc(db, 'adminUsers', uid);
+      const adminSnap = await getDoc(adminRef);
+
+      if (adminSnap.exists()) {
+        console.log('✅ Admin profile found');
+        return { id: adminSnap.id, ...adminSnap.data() };
+      } else {
+        console.log('❌ Admin profile not found');
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ Error fetching admin profile:', error);
+      throw error;
+    }
+  },
+
   // Get User Profile - Checks both collections to determine account type
   getUserProfile: async (uid) => {
     try {
-      console.log('🔍 Searching for user profile in both collections for UID:', uid);
-      
-      // First check farmers collection
+      console.log('🔍 Searching for user profile in all collections for UID:', uid);
+
+      // First check adminUsers collection
+      const adminProfile = await accountService.getAdminProfile(uid);
+      if (adminProfile) {
+        console.log('✅ Found admin profile');
+        return { ...adminProfile, accountType: 'admin' };
+      }
+
+      // Then check farmers collection
       const farmerProfile = await accountService.getFarmerProfile(uid);
       if (farmerProfile) {
         console.log('✅ Found farmer profile');
         return { ...farmerProfile, accountType: 'farmer' };
       }
-      
+
       // Then check customers collection
       const customerProfile = await accountService.getCustomerProfile(uid);
       if (customerProfile) {
         console.log('✅ Found customer profile');
         return { ...customerProfile, accountType: 'customer' };
       }
-      
-      console.log('❌ No profile found in either collection');
+
+      console.log('❌ No profile found in any collection');
       return null;
-      
+
     } catch (error) {
       console.error('❌ Error searching for user profile:', error);
       throw error;
@@ -267,7 +294,15 @@ export const accountService = {
   updateLastLogin: async (uid, accountType) => {
     try {
       console.log('⏰ Updating last login for UID:', uid, 'Type:', accountType);
-      const collection = accountType === 'farmer' ? 'farmers' : 'customers';
+
+      let collection;
+      if (accountType === 'admin') {
+        collection = 'adminUsers';
+      } else if (accountType === 'farmer') {
+        collection = 'farmers';
+      } else {
+        collection = 'customers';
+      }
       const userRef = doc(db, collection, uid);
       await updateDoc(userRef, {
         lastLoginAt: serverTimestamp()

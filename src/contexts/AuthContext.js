@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { onAuthStateChanged, signOut, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
 import { accountService } from '../services/accountService';
 import { adminUserService } from '../services/adminUserService';
@@ -25,18 +25,23 @@ export function AuthProvider({ children }) {
       
       if (user) {
         try {
-          // Check if user is admin and set admin privileges
-          await adminUserService.setUserAsAdmin(user.uid, user.email);
-          
           // Get user profile from appropriate collection
           console.log('🔍 Looking for user profile in both collections...');
           let profile = await accountService.getUserProfile(user.uid);
-          
+
           if (profile) {
-            setUserProfile(profile);
-            setUserType(profile.accountType);
-            console.log('✅ User profile found:', profile.accountType);
-            
+            // Check if user is admin and set admin privileges
+            const adminData = await adminUserService.isAdminUser(user.email);
+            if (adminData) {
+              console.log('✅ Admin privileges detected:', adminData);
+              setUserProfile({ ...profile, isAdmin: true });
+              setUserType('admin');
+            } else {
+              console.log('❌ No admin privileges detected');
+              setUserProfile(profile);
+              setUserType(profile.accountType);
+            }
+
             // Update last login time
             await accountService.updateLastLogin(user.uid, profile.accountType);
           } else {
@@ -55,7 +60,8 @@ export function AuthProvider({ children }) {
         setUserProfile(null);
         setUserType(null);
       }
-      
+
+      // Ensure loading is set to false only after userProfile is updated
       setLoading(false);
     });
 
@@ -100,12 +106,24 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const signin = async (email, password) => {
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      setCurrentUser(userCredential.user);
+      return userCredential.user;
+    } catch (error) {
+      console.error('Error signing in:', error);
+      throw error;
+    }
+  };
+
   const value = {
     currentUser,
     userProfile,
     userType, // Add userType to context value
     logout,
-    refreshUserProfile
+    refreshUserProfile,
+    signin // Add signin to context value
   };
 
   return (

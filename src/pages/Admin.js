@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { AuthContext } from '../contexts/AuthContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { adminService } from '../services/adminService';
@@ -6,7 +7,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import './Admin.css';
 
 const Admin = () => {
-  const { currentUser, userProfile } = useAuth();
+  const { currentUser, userProfile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('products');
   const [loading, setLoading] = useState(true);
@@ -42,7 +43,8 @@ const Admin = () => {
   // Check admin access on component mount
   useEffect(() => {
     checkAdminAccess();
-  }, [currentUser, userProfile]);  const checkAdminAccess = async () => {
+  }, [currentUser, userProfile, authLoading]);  const checkAdminAccess = async () => {
+    console.log('🔍 Checking admin access for user:', currentUser?.uid);
     if (!currentUser) {
       navigate('/signin');
       return;
@@ -279,7 +281,7 @@ const Admin = () => {
     return `৳${parseFloat(amount).toFixed(2)}`;
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return <LoadingSpinner />;
   }
 

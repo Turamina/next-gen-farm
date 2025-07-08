@@ -379,6 +379,23 @@
   text-align: left;
 }
 
+.admin-login-btn {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border-color: #667eea;
+  font-size: 0.8rem;
+  padding: 0.5rem 1rem;
+}
+
+.admin-login-btn:hover {
+  background: linear-gradient(135deg, #5a6fd8, #6a4190);
+  border-color: #5a6fd8;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  color: white;
+  text-decoration: none;
+}
+
 @media (max-width: 900px) and (min-width: 769px) {
   .header-nav {
     padding: 1.2rem 1.5rem;

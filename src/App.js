@@ -15,6 +15,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
 import Admin from './pages/Admin';
+import AdminLogin from './components/AdminLogin';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentFailed from './pages/PaymentFailed';
 import PaymentCanceled from './pages/PaymentCanceled';
@@ -359,7 +360,7 @@ function App() {
                   </>
                 </ProtectedRoute>
               } />              
-              <Route path="/admin" element={
+              {/* <Route path="/admin" element={
                 <ProtectedRoute>
                   <>
                     <Header />
@@ -369,7 +370,21 @@ function App() {
                     <Footer />
                   </>
                 </ProtectedRoute>
+              } /> */}
+              
+              {/* Admin Login - No authentication required */}
+              <Route path="/admin-login" element={<AdminLogin />} />
+
+              <Route path="/admin" element={
+                <>
+                  <Header />
+                  <main className="app-main-content">
+                    <Admin />
+                  </main>
+                  <Footer />
+                </>
               } />
+              
               <Route path="/about" element={
                 <>
                   <Header />

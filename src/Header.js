@@ -166,6 +166,14 @@ function Header() {
             >
               Create Account
             </Link>
+            <Link 
+              to="/admin-login" 
+              className="auth-btn admin-login-btn" 
+              onClick={handleLinkClick}
+              title="Admin Login Portal"
+            >
+              🛡️ Admin
+            </Link>
           </>
         )}      </div>
 

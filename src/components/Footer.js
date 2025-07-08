@@ -66,6 +66,7 @@ const Footer = () => {
             <Link to="/privacy">Privacy Policy</Link>
             <Link to="/terms">Terms of Service</Link>
             <Link to="/sitemap">Sitemap</Link>
+            <Link to="/admin-login" className="admin-access-link">🛡️ Admin Access</Link>
           </div>
         </div>
       </div>
